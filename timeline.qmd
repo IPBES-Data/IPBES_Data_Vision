@@ -1,0 +1,68 @@
+---
+title: "Release Timeline"
+format:
+  html:
+    toc: false
+execute:
+  echo: false
+---
+
+## Available Versions
+
+The table below is generated from GitHub Releases.
+
+<div id="release-table">Loading release data...</div>
+
+<script>
+(async () => {
+  const endpoint = "https://api.github.com/repos/IPBES-Data/IPBES_Data_Vision/releases";
+  const container = document.getElementById("release-table");
+
+  const doiRegex = /10\.\d{4,9}\/[-._;()/:A-Z0-9]+/i;
+
+  const render = (rows) => {
+    if (!rows.length) {
+      container.innerHTML = "No releases found yet.";
+      return;
+    }
+
+    const header = "<table><thead><tr><th>Version</th><th>Date</th><th>DOI</th><th>Release</th><th>PDF</th></tr></thead><tbody>";
+    const body = rows.map((r) => {
+      const doiCell = r.doi ? `<a href=\"https://doi.org/${r.doi}\">${r.doi}</a>` : "PENDING";
+      const pdfCell = r.pdf ? `<a href=\"${r.pdf}\">PDF</a>` : "-";
+      return `<tr><td>${r.tag}</td><td>${r.date}</td><td>${doiCell}</td><td><a href=\"${r.url}\">Release</a></td><td>${pdfCell}</td></tr>`;
+    }).join("");
+
+    container.innerHTML = `${header}${body}</tbody></table>`;
+  };
+
+  try {
+    const response = await fetch(endpoint, {
+      headers: { "Accept": "application/vnd.github+json" }
+    });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+    const releases = await response.json();
+    const rows = releases
+      .filter((r) => !r.draft)
+      .map((r) => {
+        const body = r.body || "";
+        const doiMatch = body.match(doiRegex);
+        const pdfAsset = (r.assets || []).find((a) => a.name.toLowerCase().endsWith(".pdf"));
+
+        return {
+          tag: r.tag_name,
+          date: (r.published_at || "").slice(0, 10),
+          doi: doiMatch ? doiMatch[0] : "",
+          url: r.html_url,
+          pdf: pdfAsset ? pdfAsset.browser_download_url : ""
+        };
+      });
+
+    render(rows);
+  } catch (error) {
+    container.textContent = "Could not load release data from GitHub Releases.";
+    console.error(error);
+  }
+})();
+</script>

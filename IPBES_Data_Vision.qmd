@@ -1,0 +1,51 @@
+---
+title: "IPBES Data Management Vision"
+format:
+  html:
+    toc: true
+    number-sections: true
+    format-links: false
+  pdf:
+    toc: true
+    number-sections: true
+execute:
+  echo: false
+---
+
+```{r}
+version <- Sys.getenv("IPBES_VERSION", unset = "development")
+release_date <- substr(Sys.getenv("IPBES_RELEASE_DATE", unset = as.character(Sys.Date())), 1, 10)
+doi <- Sys.getenv("IPBES_DOI", unset = "PENDING")
+doi_url <- Sys.getenv("IPBES_DOI_URL", unset = "")
+build_pdf <- tolower(Sys.getenv("IPBES_BUILD_PDF", unset = "false")) %in% c("1", "true", "yes", "y", "on")
+if (identical(doi_url, "") && !identical(doi, "PENDING")) {
+  doi_url <- paste0("https://doi.org/", doi)
+}
+pdf_line <- if (build_pdf) {
+  "[Download latest PDF](assets/IPBES-Data-Management-Vision-latest.pdf)"
+} else {
+  "Generated in release/CI builds."
+}
+```
+
+## Release Metadata
+
+- **Version:** `r version`
+- **Release date:** `r release_date`
+- **DOI:** `r if (!identical(doi, "PENDING") && !identical(doi_url, "")) sprintf("[%s](%s)", doi, doi_url) else doi`
+- **PDF:** `r pdf_line`
+- **Timeline:** [View release timeline](timeline.html)
+
+## About This Document
+
+This is the living **IPBES Data Management Vision** document.
+
+All changes are tracked in git and reviewed through pull requests.
+
+## Scope
+
+The document defines principles, implementation priorities, and governance for data management up to 2030.
+
+## Citation
+
+IPBES Data Management Vision, version `r version`, `r release_date`, DOI: `r doi`.

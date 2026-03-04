@@ -1,0 +1,41 @@
+name: PR Checks
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup R
+        uses: r-lib/actions/setup-r@v2
+
+      - name: Setup Quarto
+        uses: quarto-dev/quarto-actions/setup@v2
+
+      - name: Setup TinyTeX
+        uses: r-lib/actions/setup-tinytex@v2
+
+      - name: Build (HTML, timeline, PDF)
+        env:
+          IPBES_VERSION: pr-${{ github.event.pull_request.number }}
+          IPBES_RELEASE_DATE: ${{ github.event.pull_request.updated_at }}
+          IPBES_DOI: PENDING
+          IPBES_DOI_URL: ""
+          IPBES_OUTPUT_DIR: site
+        run: Rscript scripts/build.R pr
+
+      - name: Assert expected artifacts exist
+        run: |
+          test -s site/index.html
+          test -s site/timeline.html
+          test -s site/assets/IPBES-Data-Management-Vision-latest.pdf

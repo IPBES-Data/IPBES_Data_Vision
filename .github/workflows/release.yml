@@ -1,0 +1,59 @@
+name: Release Publish
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-pages
+  cancel-in-progress: false
+
+jobs:
+  build_and_deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup R
+        uses: r-lib/actions/setup-r@v2
+
+      - name: Setup Quarto
+        uses: quarto-dev/quarto-actions/setup@v2
+
+      - name: Setup TinyTeX
+        uses: r-lib/actions/setup-tinytex@v2
+
+      - name: Build site and PDF
+        env:
+          IPBES_VERSION: ${{ github.event.release.tag_name }}
+          IPBES_RELEASE_DATE: ${{ github.event.release.published_at }}
+          IPBES_DOI: PENDING
+          IPBES_DOI_URL: ""
+          IPBES_OUTPUT_DIR: site
+        run: Rscript scripts/build.R release
+
+      - name: Read build info
+        id: build_info
+        run: |
+          PDF_NAME=$(grep '^PDF_NAME=' site/build-info.env | cut -d '=' -f 2-)
+          echo "pdf_name=${PDF_NAME}" >> "$GITHUB_OUTPUT"
+
+      - name: Upload PDF to GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: site/releases/${{ steps.build_info.outputs.pdf_name }}
+          overwrite_files: true
+
+      - name: Deploy website to gh-pages branch
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: gh-pages
+          publish_dir: site
+          force_orphan: true
+          enable_jekyll: false

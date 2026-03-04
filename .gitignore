@@ -1,0 +1,48 @@
+# macOS
+.DS_Store
+._*
+.AppleDouble
+.LSOverride
+.Spotlight-V100
+.Trashes
+.fseventsd
+
+# Editor / IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# R
+.Rhistory
+.RData
+.Ruserdata
+.Rproj.user/
+
+# Quarto / render caches
+.quarto/
+_site/
+*_files/
+*.knit.md
+*.aux
+*.toc
+*.out
+*.lof
+*.lot
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+
+# Build outputs
+build/
+dist/
+html/
+*.tex
+site/
+
+# Temporary files
+*.tmp
+*.log
+
+/.quarto/
+**/*.quarto_ipynb
