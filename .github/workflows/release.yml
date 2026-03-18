@@ -14,6 +14,13 @@ concurrency:
 jobs:
   build_and_deploy:
     runs-on: ubuntu-latest
+    env:
+      IPBES_VERSION: ${{ github.event.release.tag_name }}
+      IPBES_RELEASE_DATE: ${{ github.event.release.published_at }}
+      IPBES_DOI: PENDING
+      IPBES_DOI_URL: ""
+      IPBES_BUILD_PDF: "true"
+      IPBES_OUTPUT_DIR: _site
 
     steps:
       - name: Checkout
@@ -28,25 +35,26 @@ jobs:
       - name: Setup TinyTeX
         uses: r-lib/actions/setup-tinytex@v2
 
-      - name: Build site and PDF
-        env:
-          IPBES_VERSION: ${{ github.event.release.tag_name }}
-          IPBES_RELEASE_DATE: ${{ github.event.release.published_at }}
-          IPBES_DOI: PENDING
-          IPBES_DOI_URL: ""
-          IPBES_OUTPUT_DIR: site
-        run: Rscript scripts/build.R release
-
-      - name: Read build info
-        id: build_info
+      - name: Compute PDF name
+        id: pdf_info
         run: |
-          PDF_NAME=$(grep '^PDF_NAME=' site/build-info.env | cut -d '=' -f 2-)
+          SAFE_VERSION=$(printf '%s' "${IPBES_VERSION}" | sed 's/[^A-Za-z0-9._-]/-/g')
+          PDF_NAME="IPBES-Data-Management-Vision-${SAFE_VERSION}.pdf"
           echo "pdf_name=${PDF_NAME}" >> "$GITHUB_OUTPUT"
+
+      - name: Build website
+        run: quarto render . --to html
+
+      - name: Build PDF artifact
+        run: |
+          mkdir -p _site/releases _site/assets
+          quarto render IPBES_Data_Vision.qmd --to pdf --output "${{ steps.pdf_info.outputs.pdf_name }}" --output-dir _site/releases
+          cp "_site/releases/${{ steps.pdf_info.outputs.pdf_name }}" "_site/assets/IPBES-Data-Management-Vision-latest.pdf"
 
       - name: Upload PDF to GitHub release
         uses: softprops/action-gh-release@v2
         with:
-          files: site/releases/${{ steps.build_info.outputs.pdf_name }}
+          files: _site/releases/${{ steps.pdf_info.outputs.pdf_name }}
           overwrite_files: true
 
       - name: Deploy website to gh-pages branch
@@ -54,6 +62,6 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_branch: gh-pages
-          publish_dir: site
+          publish_dir: _site
           force_orphan: true
           enable_jekyll: false

@@ -38,7 +38,10 @@ build/
 dist/
 html/
 *.tex
+!templates/title.tex
 site/
+releases/*.pdf
+releases/index.html
 
 # Temporary files
 *.tmp
@@ -46,3 +49,6 @@ site/
 
 /.quarto/
 **/*.quarto_ipynb
+
+# Local source documents
+ Data Vision - Living Document.pages

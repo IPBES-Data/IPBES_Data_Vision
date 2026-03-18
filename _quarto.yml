@@ -1,0 +1,11 @@
+project:
+  type: website
+  render:
+    - IPBES_Data_Vision.qmd
+    - older-releases.qmd
+
+website:
+  title: "IPBES Data Management Vision"
+
+execute:
+  echo: false

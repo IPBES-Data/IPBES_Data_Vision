@@ -1,0 +1,101 @@
+---
+title: "Older Releases"
+format:
+  html:
+    toc: false
+execute:
+  echo: false
+---
+
+```{r}
+`%||%` <- function(x, y) {
+  if (is.null(x) || length(x) == 0 || identical(x, "")) y else x
+}
+
+main_meta <- tryCatch(
+  rmarkdown::yaml_front_matter("IPBES_Data_Vision.qmd"),
+  error = function(e) list()
+)
+
+version <- as.character(main_meta$version %||% Sys.getenv("IPBES_VERSION", unset = "development"))
+release_date <- substr(as.character(main_meta$release_date %||% Sys.getenv("IPBES_RELEASE_DATE", unset = as.character(Sys.Date()))), 1, 10)
+doi <- as.character(main_meta$doi %||% Sys.getenv("IPBES_DOI", unset = "PENDING"))
+doi_url <- Sys.getenv("IPBES_DOI_URL", unset = "")
+if (identical(doi_url, "") && !identical(doi, "PENDING")) {
+  doi_url <- paste0("https://doi.org/", doi)
+}
+
+safe_version <- paste0("v", gsub("[^A-Za-z0-9._-]", "-", sub("^[Vv]", "", version)))
+releases_dir <- Sys.getenv("IPBES_RELEASES_SOURCE_DIR", unset = "releases")
+```
+
+## Release Metadata
+
+- **Version:** `r version`
+- **Release date:** `r release_date`
+- **DOI:** `r if (!identical(doi, "PENDING") && !identical(doi_url, "")) sprintf("[%s](%s)", doi, doi_url) else doi`
+
+```{r, results='asis'}
+if (knitr::is_html_output()) {
+  cat(
+    "<p>",
+    "<a href=\"index.html\">Vision</a>",
+    " | ",
+    "<a href=\"older-releases.html\">Older Releases</a>",
+    " | ",
+    "<a href=\"assets/IPBES-Data-Management-Vision-latest.pdf\" target=\"_blank\" rel=\"noopener noreferrer\">Latest PDF</a>",
+    "</p>",
+    sep = ""
+  )
+}
+```
+
+## Download Older Release PDFs
+
+```{r, results='asis'}
+if (!dir.exists(releases_dir)) {
+  cat("No releases directory found yet.")
+} else {
+  files <- list.files(
+    releases_dir,
+    pattern = "^IPBES-Data-Management-Vision-v[0-9].*[.]pdf$",
+    full.names = TRUE
+  )
+  files <- files[file.exists(files)]
+  files <- files[!grepl("latest[.]pdf$", basename(files), ignore.case = TRUE)]
+
+  if (length(files) == 0) {
+    cat("No released PDFs available yet.")
+  } else {
+    versions <- sub("^IPBES-Data-Management-Vision-(v[0-9].*)[.]pdf$", "\\1", basename(files))
+    is_current <- versions == safe_version
+    files <- files[!is_current]
+    versions <- versions[!is_current]
+
+    if (length(files) == 0) {
+      cat("No older released PDFs available yet.")
+    } else {
+      info <- file.info(files)
+      ord <- order(info$mtime, decreasing = TRUE)
+      files <- files[ord]
+      versions <- versions[ord]
+      info <- info[ord, , drop = FALSE]
+
+      rel_paths <- file.path("releases", basename(files))
+      size_mb <- round(info$size / (1024^2), 2)
+      modified <- format(info$mtime, "%Y-%m-%d")
+      link <- sprintf("<a href=\"%s\" target=\"_blank\" rel=\"noopener noreferrer\">Download PDF</a>", rel_paths)
+
+      out <- data.frame(
+        Version = versions,
+        Date = modified,
+        Size_MB = size_mb,
+        PDF = link,
+        stringsAsFactors = FALSE
+      )
+
+      print(knitr::kable(out, escape = FALSE))
+    }
+  }
+}
+```

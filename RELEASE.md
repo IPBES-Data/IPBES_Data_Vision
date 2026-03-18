@@ -37,12 +37,11 @@ GitHub-side settings required (not stored in repository files):
 When a GitHub release is published, automation should:
 
 1. Validate release metadata.
-2. Build website output for the released version.
+2. Build website output for the released version (index, older releases page).
 3. Build PDF for the released version.
 4. Publish website files to the dedicated `gh-pages` branch.
 5. Attach PDF to the GitHub release.
-6. Generate/update timeline data used by the website archive page.
-7. Expose visible metadata in outputs: version, release date, DOI (or DOI pending marker).
+6. Expose visible metadata in outputs: version, release date, DOI (or DOI pending marker).
 
 ## 4. Minimal Manual Actions
 
@@ -56,8 +55,8 @@ Everything else should be handled by CI/CD.
 
 Local build convention:
 
-1. Local builds default to `html/` output.
-2. CI/release builds explicitly use `site/` as temporary build output and then publish to `gh-pages`.
+1. Local and CI builds use Quarto's default `_site/` output.
+2. Release deployment publishes `_site/` content to `gh-pages`.
 
 ## 5. Inputs and Required Metadata
 
@@ -73,7 +72,7 @@ Required metadata fields in published output:
 2. `release_date`
 3. `doi`
 4. `doi_url`
-5. `release_notes_url`
+5. `release_notes`
 6. `pdf_url`
 
 ## 6. Workflow Design
@@ -89,7 +88,7 @@ Recommended jobs:
    - Create build metadata object.
 
 2. `build_site`
-   - Build static HTML output.
+   - Build static HTML output (`index.html`, `older-releases.html`).
    - Inject version and date metadata.
 
 3. `build_pdf`
@@ -102,11 +101,7 @@ Recommended jobs:
 5. `attach_assets`
    - Upload PDF (and optional checksum) to GitHub release assets.
 
-6. `update_timeline`
-   - Regenerate timeline/archive index for all releases.
-   - Ensure current and historical versions are linked.
-
-7. `final_checks`
+6. `final_checks`
    - Verify URL availability and required metadata presence in rendered outputs.
 
 ## 7. DOI Handling (Zenodo)
@@ -170,7 +165,7 @@ After each release:
 
 1. Add signed release tags.
 2. Add artifact checksum and signature files.
-3. Add link checker for timeline entries.
+3. Add link checker for release/archive entries.
 4. Add end-to-end release test in a staging branch.
 
 ## 12. Change Log (This Document)

@@ -1,28 +1,92 @@
 ---
-title: "IPBES Data Management Vision"
+title: "The IPBES long-term vision of data and knowledge management"
+subtitle: "Version {{< meta version >}} · {{< meta release_date >}}"
+version: "1.0"
+release_date: "April 2022"
+doi: "10.5281/zenodo.5513473"
+contact_email: "tsu.data@ipbes.net"
+release_notes: |
+  - Initial living-document baseline established.
+  - YAML-driven track generation removed in favor of a single-source document.
+  - Rendering switched to Quarto website defaults with `_site` output.
+editors:
+  - name: "Rainer M Krug"
+    institution: "University of Zurich"
+    orcid: "0000-0002-7490-0066"
+  - name: "Aidin Niamir"
+    institution: "Senckenberg Society for Nature Research"
+    orcid: "0000-0003-4511-3407"
 format:
   html:
+    output-file: index.html
     toc: true
     number-sections: true
     format-links: false
   pdf:
+    papersize: a4
     toc: true
     number-sections: true
+    geometry:
+      - left=2.0cm
+      - right=2.5cm
+      - top=1.0cm
+      - bottom=1.4cm
+      - includeheadfoot
+    classoption:
+      - titlepage
+    template-partials:
+      - templates/title.tex
 execute:
   echo: false
 ---
 
 ```{r}
-version <- Sys.getenv("IPBES_VERSION", unset = "development")
-release_date <- substr(Sys.getenv("IPBES_RELEASE_DATE", unset = as.character(Sys.Date())), 1, 10)
-doi <- Sys.getenv("IPBES_DOI", unset = "PENDING")
-doi_url <- Sys.getenv("IPBES_DOI_URL", unset = "")
+`%||%` <- function(x, y) {
+  if (is.null(x) || length(x) == 0 || identical(x, "")) y else x
+}
+
+meta <- rmarkdown::metadata
+authoritative_title <- as.character(meta$title %||% "IPBES long-term vision on data and knowledge management")
+authoritative_version <- as.character(meta$version %||% "development")
+authoritative_release_date <- as.character(meta$release_date %||% as.character(Sys.Date()))
+authoritative_doi <- as.character(meta$doi %||% "PENDING")
+authoritative_release_notes <- as.character(meta$release_notes %||% "")
+meta_editors <- meta$editors
+
+title_text <- authoritative_title
+version <- authoritative_version
+release_date <- substr(authoritative_release_date, 1, 10)
+doi <- authoritative_doi
+doi_url <- ""
+release_notes <- Sys.getenv("IPBES_RELEASE_NOTES", unset = authoritative_release_notes)
 build_pdf <- tolower(Sys.getenv("IPBES_BUILD_PDF", unset = "false")) %in% c("1", "true", "yes", "y", "on")
 if (identical(doi_url, "") && !identical(doi, "PENDING")) {
   doi_url <- paste0("https://doi.org/", doi)
 }
+editor_names <- character(0)
+if (is.list(meta_editors) && length(meta_editors) > 0) {
+  editor_names <- vapply(meta_editors, function(x) as.character(x$name %||% ""), character(1))
+  editor_names <- editor_names[nzchar(editor_names)]
+}
+editor_text <- if (length(editor_names) > 0) {
+  paste(editor_names, collapse = ", ")
+} else {
+  "Editors TBD"
+}
+release_year <- substr(release_date, 1, 4)
+citation_line <- if (!identical(doi, "PENDING") && !identical(doi_url, "")) {
+  sprintf(
+    "IPBES (%s): *%s*, version %s, %s (eds.). IPBES secretariat, Bonn, Germany. DOI: <%s>",
+    release_year, title_text, version, editor_text, doi_url
+  )
+} else {
+  sprintf(
+    "IPBES (%s): *%s*, version %s, %s (eds.). IPBES secretariat, Bonn, Germany. DOI: PENDING",
+    release_year, title_text, version, editor_text
+  )
+}
 pdf_line <- if (build_pdf) {
-  "[Download latest PDF](assets/IPBES-Data-Management-Vision-latest.pdf)"
+  "<a href=\"assets/IPBES-Data-Management-Vision-latest.pdf\" target=\"_blank\" rel=\"noopener noreferrer\">Download latest PDF</a>"
 } else {
   "Generated in release/CI builds."
 }
@@ -33,19 +97,267 @@ pdf_line <- if (build_pdf) {
 - **Version:** `r version`
 - **Release date:** `r release_date`
 - **DOI:** `r if (!identical(doi, "PENDING") && !identical(doi_url, "")) sprintf("[%s](%s)", doi, doi_url) else doi`
-- **PDF:** `r pdf_line`
-- **Timeline:** [View release timeline](timeline.html)
+- **PDF:** `r if (knitr::is_html_output()) pdf_line else "Download latest PDF from the website."`
 
-## About This Document
+### Release Notes
 
-This is the living **IPBES Data Management Vision** document.
+```{r, results='asis'}
+if (!identical(trimws(release_notes), "")) {
+  cat(release_notes)
+} else {
+  cat("N/A")
+}
+```
 
-All changes are tracked in git and reviewed through pull requests.
+```{r, results='asis'}
+if (knitr::is_html_output()) {
+  cat(
+    "<p>",
+    "<a href=\"index.html\">Vision</a>",
+    " | ",
+    "<a href=\"older-releases.html\">Older Releases</a>",
+    " | ",
+    "<a href=\"assets/IPBES-Data-Management-Vision-latest.pdf\" target=\"_blank\" rel=\"noopener noreferrer\">Latest PDF</a>",
+    "</p>",
+    sep = ""
+  )
+}
+```
 
-## Scope
 
-The document defines principles, implementation priorities, and governance for data management up to 2030.
+## Introduction
 
-## Citation
+The long-term vision on data and knowledge management provides the
+overall direction for how IPBES will organise, manage and deliver data
+and knowledge across its work programme up to 2030. It sets out the
+long-term ambition of the Platform in this area and outlines the
+targets and pathways needed to achieve it. While the data and
+knowledge management policy defines the principles, standards and
+procedures that govern data and knowledge management within IPBES, the
+long-term vision describes the desired state toward which these
+efforts are directed.
 
-IPBES Data Management Vision, version `r version`, `r release_date`, DOI: `r doi`.
+This vision outlines the main objectives, guiding principles and
+operational tracks that will ensure that all IPBES products are
+transparent, traceable, accessible and reusable. It supports the
+delivery of the four core functions of IPBES and complements both the
+data and knowledge management policy and the code of practice on the
+use of artificial intelligence, tailored to the needs of assessments.
+It also provides the framework for the continued integration of the
+FAIR and CARE principles in all aspects of data and knowledge
+management within IPBES.
+
+The implementation of this vision will be pursued through two closely
+linked tracks: (i) data and knowledge management within IPBES,
+focusing on the organisation, documentation and curation of
+information used and generated in assessments; and (ii) delivery and
+monitoring of IPBES products, focusing on their accessibility,
+interoperability and long-term preservation. Together, these tracks
+form a coherent structure to guide actions up to 2030 and to inform
+the development of a strategic roadmap in the next intersessional
+period.
+
+## Vision and aims
+
+By 2030, IPBES ensures the open and transparent exchange of knowledge
+and data between science, policy and society regarding its products
+and processes, and contributes to strengthening similar exchanges more
+broadly in support of biodiversity, ecosystem services and human
+well-being. Data, processes and workflows supporting the Platform in
+fulfilling its mandate will be fully compliant with the FAIR and CARE
+principles and will make responsible use of new and emerging
+technologies, including artificial intelligence, to enhance the
+quality, efficiency, accessibility, and distribution of IPBES
+products.
+
+Pursuing this vision will foster stronger collaboration, greater
+efficiency in production and distribution, and improved impact of
+IPBES products in bridging science, policy and society. The following
+aims provide the basis for moving towards this vision:
+
+- Ensure that all IPBES products and their underlying knowledge and data
+  follow the FAIR and CARE principles;
+
+- Strengthen and institutionalise connections within IPBES concerning
+  data and knowledge, including collaboration among all task forces and
+  technical support units;
+
+- Strengthen engagement with all relevant stakeholders, including
+  Indigenous Peoples and local communities, on matters of data and
+  knowledge, to enhance the scientific credibility, legitimacy and
+  uptake of IPBES products; and
+
+- Regularly assess new and advancing technologies, including artificial
+  intelligence, for their potential to support this vision and suggest
+  their use where appropriate.
+
+## Roadmap up to 2030
+
+The roadmap up to 2030 is structured around two complementary tracks
+that together support the implementation of the long-term vision. Each
+track addresses one essential aspect of data and knowledge management
+and is accompanied by specific targets designed to enhance the
+transparency, accessibility and interoperability of IPBES products.
+Progress within these tracks will ensure the realisation of the four
+aims of the long-term vision and strengthen the science policy
+interface across all functions of the Platform.
+
+## Track 1: Data and knowledge management within IPBES
+
+- **Body of knowledge** - By 2030, IPBES will have established the IPBES
+  body of knowledge (IPBES BoK), a coherent framework connecting all
+  data and knowledge used or generated through IPBES assessments. The
+  BoK will document workflows, variables, indicators and identified
+  knowledge gaps to ensure full transparency and traceability. It will
+  serve as the central reference for linking assessment findings to
+  their supporting evidence and will form the backbone for the future
+  delivery of IPBES products.
+
+- **Policy framework** - All data and knowledge included in the IPBES
+  BoK will follow the standards and procedures set out in the data and
+  knowledge management policy and its annexes, including the FAIR and
+  CARE principles and the code of practice on the use of artificial
+  intelligence, tailored to the needs of assessments. The overarching
+  goal is to improve data traceability, accountability, transparency,
+  interoperability, reproducibility and ethical use across all IPBES
+  activities.
+
+- **Standards and identifiers** - Adherence to widely recognised
+  interoperability standards will facilitate discovery, access and
+  citation of data and knowledge. Persistent identifiers will be used
+  for attribution and citation, ensuring that the original authors and
+  contributors receive credit and that the use of IPBES products is
+  traceable.
+
+- **Access and stakeholders** - IPBES members and stakeholders,
+  including Indigenous Peoples and local communities, will be able to
+  access and use IPBES products and the underlying knowledge and data
+  documented in their production, ensuring equitable benefits from their
+  use.
+
+- **Scope and external data** - While IPBES products rely extensively on
+  external data and knowledge, including Indigenous and local knowledge,
+  their management remains outside the direct scope of IPBES. However,
+  IPBES will provide guidance encouraging the use of external data that
+  follow the FAIR and CARE principles and other provisions of the data
+  and knowledge management policy.
+
+## Track 2: Delivery and monitoring of IPBES products
+
+- **Data delivery platform** - By 2030, IPBES will operate a data
+  delivery platform (IPBES DDP) that provides user friendly access to
+  IPBES products, the data generated during their production and curated
+  links to relevant external datasets. The DDP will draw on the IPBES
+  BoK and follow the data and knowledge management policy to ensure
+  consistent metadata, standards and attribution.
+
+- **Monitoring and reporting** - Real time monitoring will provide
+  information on the use and reach of IPBES products and on continued
+  adherence to the data and knowledge management policy.
+
+- **Connections (internal and external)** - Connections between IPBES
+  products and datasets will be maintained and published to improve
+  accessibility and enable cross product searches. Links between IPBES
+  products and relevant external documents, such as national
+  environmental policies, private sector standards and external data
+  providers, will also be identified and published where appropriate.
+
+- **Dynamic updating and versioning** - IPBES will implement tools to
+  monitor the availability of underlying external datasets, check
+  compliance with the data and knowledge management policy and allow the
+  automatic update of figures, tables and other visualisations that rely
+  on dynamically changing data. Versioning of final IPBES products will
+  be introduced to enable updates based on continuously delivered data,
+  aligned with the concept of living or dynamic documents.
+
+- **Stakeholder access and ILK sharing** - The use of IPBES products,
+  including the uptake of identified knowledge gaps, will be monitored
+  and shared with IPBES members and stakeholders, including Indigenous
+  Peoples and local communities. IPBES will ensure that final products
+  incorporating Indigenous and local knowledge are shared back with the
+  relevant knowledge holders to support dialogue and equitable benefit
+  sharing.
+
+- **Training and feedback** - By 2030, IPBES will offer online training
+  materials demonstrating how to access, navigate and use IPBES
+  products, data and associated knowledge, along with open feedback
+  channels for users and stakeholders.
+
+## Targets of the roadmap
+
+The targets for data and knowledge management and delivery up to 2030
+are aligned with the six objectives of the IPBES rolling work
+programme to 2030: (1) assessing knowledge; (2) building capacity; (3)
+strengthening knowledge foundations; (4) supporting policy; (5)
+communicating and engaging; and (6) improving platform effectiveness.
+Progress toward these targets will guide implementation of the two
+tracks of the long-term vision and contribute to achieving the four
+aims of the long-term vision.
+
+## Track 1: Data and knowledge management within IPBES
+
+Target 1.1 -- By 2023, set up a public bibliographic library
+containing the underlying bibliographic records of IPBES products.
+(Objectives 1 & 3)
+
+Target 1.2 -- Starting in 2024, revise the IPBES data and knowledge
+management policy every two years and support its consistent
+implementation across the Platform. (Objective 3)
+
+Target 1.3 -- By 2025, ensure that all IPBES products adhere to the
+CARE principles (Collective Benefit, Authority to Control,
+Responsibility and Ethics). (Objectives 3 & 5)
+
+Target 1.4 -- By 2026, establish the IPBES BoK as a structured and
+publicly findable framework documenting all underlying resources used
+in IPBES products. (Objective 3)
+
+Target 1.5 -- By 2027, ensure that all IPBES products fully adhere to
+the FAIR principles (Findable, Accessible, Interoperable and
+Reusable). (Objective 3)
+
+## Track 2: Delivery and monitoring of IPBES products
+
+Target 2.1 -- By 2026, disseminate knowledge gaps identified in IPBES
+products in a structured format with persistent identifiers to enable
+future monitoring and tracking. (Objective 3)
+
+Target 2.2 By 2026, establish explicit computational links between
+IPBES products and relevant policy tools and methodologies to enhance
+policy support. (Objectives 3 & 4)
+
+Target 2.3 -- By 2025, develop a roadmap to strengthen the capacities
+of stakeholders for accessing and using IPBES data and knowledge.
+(Objectives 2, 3 & 5)
+
+Target 2.4 -- By 2026, develop a roadmap to strengthen the capacities
+of stakeholders, including policy makers, for accessing and using
+IPBES data and knowledge. (Objectives 2, 3 & 5)
+
+Target 2.5 -- By 2027, monitor the degree to which external data
+sources follow the data management and governance principles set out
+in the IPBES data and knowledge management policy in order to
+encourage open science. (Objective 3)
+
+Target 2.6 -- By 2027, monitor the use of and identify potential gaps
+in tools and methodologies for the delivery of IPBES products to
+decision makers. (Objectives 4 & 6)
+
+Target 2.7 -- By 2027, collect feedback from IPBES members and
+stakeholders, including Indigenous Peoples and local communities and
+policy makers, on the accessibility, quality and reach of IPBES
+products in order to improve their impact. (Objectives 5 & 6)
+
+Target 2.8 -- By 2030, create a technical platform capable of
+dynamically updating selected aspects of IPBES products according to
+the availability of new resources. (Objectives 1 & 3)
+
+Target 2.9 -- By 2030, develop a tracking system to map the use and
+citation of IPBES products in national, regional and global policies as
+well as in scientific publications. (Objectives 3 & 4)
+
+## Suggested Citation
+
+```{r, results='asis'}
+cat(citation_line)
+```
