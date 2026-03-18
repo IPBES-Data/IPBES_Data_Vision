@@ -1,9 +1,11 @@
 ---
 title: "The IPBES long-term vision of data and knowledge management"
 subtitle: "Version {{< meta version >}} · {{< meta release_date >}}"
-version: "1.0"
+version: "1.1"
 release_date: "April 2022"
-doi: "10.5281/zenodo.5513473"
+concept_doi: "10.5072/zenodo.472195"
+# Is a real concept DOI - ONLY FOR TESTING OF older-releases.qmd render
+# concept_doi: "10.5281/zenodo.3551078" 
 contact_email: "tsu.data@ipbes.net"
 release_notes: |
   - Initial living-document baseline established.
@@ -49,7 +51,9 @@ meta <- rmarkdown::metadata
 authoritative_title <- as.character(meta$title %||% "IPBES long-term vision on data and knowledge management")
 authoritative_version <- as.character(meta$version %||% "development")
 authoritative_release_date <- as.character(meta$release_date %||% as.character(Sys.Date()))
-authoritative_doi <- as.character(meta$doi %||% "PENDING")
+env_doi <- trimws(Sys.getenv("IPBES_DOI", unset = ""))
+authoritative_doi <- if (!identical(env_doi, "")) env_doi else "Will be inserted upon release"
+authoritative_concept_doi <- as.character(meta$concept_doi %||% "")
 authoritative_release_notes <- as.character(meta$release_notes %||% "")
 meta_editors <- meta$editors
 
@@ -57,11 +61,17 @@ title_text <- authoritative_title
 version <- authoritative_version
 release_date <- substr(authoritative_release_date, 1, 10)
 doi <- authoritative_doi
+concept_doi <- authoritative_concept_doi
 doi_url <- ""
+concept_doi_url <- ""
 release_notes <- Sys.getenv("IPBES_RELEASE_NOTES", unset = authoritative_release_notes)
 build_pdf <- tolower(Sys.getenv("IPBES_BUILD_PDF", unset = "false")) %in% c("1", "true", "yes", "y", "on")
-if (identical(doi_url, "") && !identical(doi, "PENDING")) {
+doi_missing <- identical(trimws(doi), "") || identical(tolower(trimws(doi)), "will be inserted upon release")
+if (identical(doi_url, "") && !doi_missing) {
   doi_url <- paste0("https://doi.org/", doi)
+}
+if (identical(concept_doi_url, "") && !identical(concept_doi, "")) {
+  concept_doi_url <- paste0("https://doi.org/", concept_doi)
 }
 editor_names <- character(0)
 if (is.list(meta_editors) && length(meta_editors) > 0) {
@@ -74,14 +84,14 @@ editor_text <- if (length(editor_names) > 0) {
   "Editors TBD"
 }
 release_year <- substr(release_date, 1, 4)
-citation_line <- if (!identical(doi, "PENDING") && !identical(doi_url, "")) {
+citation_line <- if (!doi_missing && !identical(doi_url, "")) {
   sprintf(
     "IPBES (%s): *%s*, version %s, %s (eds.). IPBES secretariat, Bonn, Germany. DOI: <%s>",
     release_year, title_text, version, editor_text, doi_url
   )
 } else {
   sprintf(
-    "IPBES (%s): *%s*, version %s, %s (eds.). IPBES secretariat, Bonn, Germany. DOI: PENDING",
+    "IPBES (%s): *%s*, version %s, %s (eds.). IPBES secretariat, Bonn, Germany. DOI: **Will be inserted upon release**",
     release_year, title_text, version, editor_text
   )
 }
@@ -96,7 +106,8 @@ pdf_line <- if (build_pdf) {
 
 - **Version:** `r version`
 - **Release date:** `r release_date`
-- **DOI:** `r if (!identical(doi, "PENDING") && !identical(doi_url, "")) sprintf("[%s](%s)", doi, doi_url) else doi`
+- **DOI:** `r if (!doi_missing && !identical(doi_url, "")) sprintf("[%s](%s)", doi, doi_url) else "**Will be inserted upon release**"`
+- **Latest-version DOI:** `r if (!identical(concept_doi, "") && !identical(concept_doi_url, "")) sprintf("[%s](%s)", concept_doi, concept_doi_url) else "N/A"`
 - **PDF:** `r if (knitr::is_html_output()) pdf_line else "Download latest PDF from the website."`
 
 ### Release Notes
@@ -115,7 +126,7 @@ if (knitr::is_html_output()) {
     "<p>",
     "<a href=\"index.html\">Vision</a>",
     " | ",
-    "<a href=\"older-releases.html\">Older Releases</a>",
+    "<a href=\"older-releases.html\">All Releases</a>",
     " | ",
     "<a href=\"assets/IPBES-Data-Management-Vision-latest.pdf\" target=\"_blank\" rel=\"noopener noreferrer\">Latest PDF</a>",
     "</p>",

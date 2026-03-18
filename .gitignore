@@ -40,8 +40,6 @@ html/
 *.tex
 !templates/title.tex
 site/
-releases/*.pdf
-releases/index.html
 
 # Temporary files
 *.tmp
@@ -52,3 +50,4 @@ releases/index.html
 
 # Local source documents
  Data Vision - Living Document.pages
+IPBES_Data_Vision_org.pdf

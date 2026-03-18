@@ -62,7 +62,7 @@ $endif$
   \clearpage
   \thispagestyle{fancy}
   \vspace*{6.4cm}
-  \noindent{\bfseries DOI: $if(doi)$$doi$$else$PENDING$endif$}
+  \noindent{\bfseries DOI: $if(doi)$$doi$$else$\textbf{Will be inserted upon release}$endif$}
 
   \vfill
   {\small $if(title)$$title$$else$This document$endif$ is a product of the IPBES task force on knowledge and data.\par}
@@ -75,9 +75,9 @@ $endif$
   $endif$
   \vspace{0.25cm}
   {\small Suggested citation:\par}
-  {\small IPBES ($if(release_date)$$release_date$$else$YYYY-MM-DD$endif$): $if(title)$$title$$else$IPBES Long-term Vision on Data and Knowledge Management$endif$ ver. $if(version)$$version$$else$1.0$endif$, $if(editors)$$for(editors)$$editors.name$$sep$, $endfor$ (eds.)$else$Editors TBD$endif$. IPBES secretariat, Bonn, Germany. DOI: $if(doi)$$doi$$else$PENDING$endif$\par}
+  {\small IPBES ($if(release_date)$$release_date$$else$YYYY-MM-DD$endif$): $if(title)$$title$$else$IPBES Long-term Vision on Data and Knowledge Management$endif$ ver. $if(version)$$version$$else$1.0$endif$, $if(editors)$$for(editors)$$editors.name$$sep$, $endfor$ (eds.)$else$Editors TBD$endif$. IPBES secretariat, Bonn, Germany. DOI: $if(doi)$$doi$$else$\textbf{Will be inserted upon release}$endif$\par}
   \vspace{0.4cm}
-  {\small\bfseries To get the latest version of the vision visit $if(doi)$http://doi.org/$doi$$else$http://doi.org/10.5281/zenodo.5513473$endif$\par}
+  {\small\bfseries To get the latest version of the vision visit $if(concept_doi)$http://doi.org/$concept_doi$$elseif(doi)$http://doi.org/$doi$$else$\textbf{Will be inserted upon release}$endif$\par}
   {\small\bfseries Inquiries should be directed to $if(contact_email)$$contact_email$$else$tsu.data@ipbes.net$endif$\par}
   \clearpage
 }

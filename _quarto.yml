@@ -3,6 +3,9 @@ project:
   render:
     - IPBES_Data_Vision.qmd
     - older-releases.qmd
+    - RELEASE.qmd
+    - setup.qmd
+    - help_admin.qmd
 
 website:
   title: "IPBES Data Management Vision"

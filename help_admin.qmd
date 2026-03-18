@@ -1,0 +1,26 @@
+---
+title: "Admin Help Hub"
+format:
+  html:
+    output-file: help_admin.html
+execute:
+  echo: false
+---
+
+This hidden page provides quick access to the repository's internal admin and operations documentation.
+
+These documents are intended for maintainers and template adopters, and are not linked from the public navigation pages.
+
+## Hidden Admin Docs
+
+### Release Process
+
+Operational flow for PR checks and release publication, including DOI reservation, Zenodo draft upload, and manual minting boundary.
+
+[Open `release.html`](release.html)
+
+### Template Setup Guide
+
+Step-by-step setup for new repositories created from this template, including required GitHub variables/secrets and sandbox-to-production rollout.
+
+[Open `setup.html`](setup.html)

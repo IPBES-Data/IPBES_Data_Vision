@@ -1,0 +1,151 @@
+---
+title: "Release Process"
+format:
+  html:
+    output-file: release.html
+    toc: true
+    number-sections: true
+execute:
+  echo: false
+---
+
+## Purpose
+
+This page explains the release lifecycle for the **IPBES Data Management Vision**:
+
+- what runs on pull requests,
+- what runs when a GitHub release is published,
+- how GitHub Actions interacts with Zenodo,
+- and where manual Zenodo publish/minting begins.
+
+## System Overview
+
+```{mermaid}
+flowchart TD
+  A["Pull Request to main"] --> B["PR Checks workflow"]
+  B --> C["Render pages: index, older-releases, release (hidden)"]
+  B --> D["Render PDF artifact"]
+  B --> E["Assert expected files"]
+
+  F["GitHub Release published"] --> G["Release Publish workflow"]
+  G --> H["Resolve Zenodo target (sandbox|production)"]
+  H --> I["Read version + concept_doi from frontmatter"]
+  I --> J["Reserve Zenodo version DOI"]
+  J --> K["Build HTML/PDF with reserved DOI"]
+  K --> L["Upload PDF + release notes to Zenodo draft"]
+  K --> M["Upload PDF to GitHub Release assets"]
+  K --> N["Deploy _site to gh-pages"]
+  L --> O["Manual Zenodo publish/mint"]
+```
+
+## PR Validation Flow
+
+```{mermaid}
+flowchart LR
+  PR["PR opened or updated"] --> S1["Checkout + setup R/Quarto/TinyTeX"]
+  S1 --> S2["Render website HTML"]
+  S2 --> S3["Render PDF artifact"]
+  S3 --> S4["Assert required artifacts"]
+  S4 --> RES["Pass/Fail status"]
+```
+
+Expected PR artifacts:
+
+1. `_site/index.html`
+2. `_site/older-releases.html`
+3. `_site/assets/IPBES-Data-Management-Vision-latest.pdf`
+
+## Release Publish Flow
+
+```{mermaid}
+sequenceDiagram
+  participant U as Maintainer
+  participant GH as GitHub Actions
+  participant Z as Zenodo
+  participant GR as GitHub Release
+  participant GP as gh-pages
+
+  U->>GR: Publish release
+  GH->>GH: Resolve ZENODO_TARGET
+  GH->>GH: Read version + concept_doi
+  GH->>Z: Create new draft version and reserve DOI
+  Z-->>GH: Reserved DOI + draft deposition id
+  GH->>GR: Append "Version DOI: https://doi.org/<doi>"
+  GH->>GH: Build website and PDF (using IPBES_DOI)
+  GH->>Z: Upload PDF + release notes to draft
+  GH->>GR: Upload PDF asset
+  GH->>GP: Deploy _site
+  Note over Z,U: Draft remains unpublished.\nMinting is manual in Zenodo UI.
+```
+
+## Stage Matrix
+
+| Stage | Trigger | Automation | Output |
+|---|---|---|---|
+| PR check | Pull request | `pr-check.yml` | Validation status + artifacts |
+| Target selection | Release publish | `release.yml` | Active Zenodo base/token |
+| DOI reservation | Release publish | `release.yml` + Zenodo | Reserved version DOI |
+| Build | Release publish | `release.yml` | HTML + versioned PDF |
+| Zenodo draft upload | Release publish | `release.yml` + Zenodo | Draft updated (PDF + notes) |
+| GitHub release upload | Release publish | `release.yml` | PDF asset on release |
+| Deploy | Release publish | `release.yml` | Updated `_site` on `gh-pages` |
+| Final publish/mint | Manual | Zenodo UI | Minted/published record |
+
+## Configuration
+
+Repository variables and secrets:
+
+1. `ZENODO_TARGET`: `sandbox` or `production` (defaults to `production` if unset/invalid)
+2. `ZENODO_API_BASE`: production Zenodo API base
+3. `ZENODO_SANDBOX_API_BASE`: sandbox Zenodo API base
+4. `ZENODO_TOKEN`: production token (used when `ZENODO_TARGET=production`)
+5. `ZENODO_SANDBOX_TOKEN`: sandbox token (used when `ZENODO_TARGET=sandbox`)
+
+Switching environment is done by changing only `ZENODO_TARGET`.
+
+## Frontmatter Inputs
+
+The release workflow reads these fields from `IPBES_Data_Vision.qmd` frontmatter:
+
+1. `version`
+2. `concept_doi`
+3. `release_date`
+4. `release_notes`
+5. `editors`
+6. `contact_email`
+
+Behavior rules:
+
+1. Reserved DOI is injected as `IPBES_DOI` at release build time.
+2. If DOI is unavailable, output displays `**Will be inserted upon release**`.
+3. `concept_doi` is used for latest-version reference and all-releases lookup.
+4. `ZENODO_CONCEPTRECID` is derived from `concept_doi`.
+
+## Failure Conditions
+
+Release workflow fails on:
+
+1. Missing/invalid `version` or `concept_doi`.
+2. Missing selected base/token for active `ZENODO_TARGET`.
+3. Zenodo DOI reservation failure.
+4. Build failure.
+5. Zenodo draft upload failure.
+6. GitHub release asset upload failure.
+7. `gh-pages` deployment failure.
+
+## Post-Release Checklist
+
+1. Workflow run is green.
+2. Site is updated on `gh-pages`.
+3. GitHub release has attached PDF.
+4. HTML/PDF show reserved DOI.
+5. Zenodo draft contains uploaded PDF and release notes.
+6. Release notes include exactly one DOI line.
+7. Zenodo draft is published manually when ready.
+
+## Change Log
+
+- 2026-03-04: Initial release automation specification created.
+- 2026-03-18: Updated to pre-reserve Zenodo DOI and append DOI to GitHub release notes.
+- 2026-03-18: Converted to Quarto (`RELEASE.qmd`) and rendered as hidden `release.html`.
+- 2026-03-18: Added Mermaid diagrams and stage-oriented release documentation.

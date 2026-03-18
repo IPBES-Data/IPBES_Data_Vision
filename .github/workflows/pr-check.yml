@@ -44,11 +44,11 @@ jobs:
           IPBES_OUTPUT_DIR: _site
           IPBES_BUILD_PDF: "true"
         run: |
-          mkdir -p _site/releases _site/assets
+          mkdir -p build _site/assets
           SAFE_VERSION=$(printf '%s' "${IPBES_VERSION}" | sed 's/[^A-Za-z0-9._-]/-/g')
           PDF_NAME="IPBES-Data-Management-Vision-${SAFE_VERSION}.pdf"
-          quarto render IPBES_Data_Vision.qmd --to pdf --output "${PDF_NAME}" --output-dir _site/releases
-          cp "_site/releases/${PDF_NAME}" "_site/assets/IPBES-Data-Management-Vision-latest.pdf"
+          quarto render IPBES_Data_Vision.qmd --to pdf --output "${PDF_NAME}" --output-dir build
+          cp "build/${PDF_NAME}" "_site/assets/IPBES-Data-Management-Vision-latest.pdf"
 
       - name: Assert expected artifacts exist
         run: |
