@@ -8,6 +8,7 @@ concept_doi: "10.5072/zenodo.472195"
 # concept_doi: "10.5281/zenodo.3551078" 
 contact_email: "tsu.data@ipbes.net"
 release_notes: |
+  - This is a test release
   - Initial living-document baseline established.
   - YAML-driven track generation removed in favor of a single-source document.
   - Rendering switched to Quarto website defaults with `_site` output.
