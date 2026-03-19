@@ -94,6 +94,20 @@ Notes:
 
 ## GitHub Variables and Secrets
 
+Set these at repository level in GitHub:
+
+1. Open the repository on GitHub.
+2. Go to `Settings` -> `Secrets and variables` -> `Actions`.
+3. In `Variables`, add:
+   - `ZENODO_TARGET`
+   - `ZENODO_API_BASE`
+   - `ZENODO_SANDBOX_API_BASE`
+4. In `Secrets`, add:
+   - `ZENODO_TOKEN`
+   - `ZENODO_SANDBOX_TOKEN`
+
+Keep `ZENODO_TARGET` as the single environment switch (`sandbox` or `production`).
+
 ### Variables
 
 1. `ZENODO_TARGET`
