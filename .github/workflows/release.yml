@@ -413,6 +413,14 @@ jobs:
               _body, _status = request_raw("POST", upload_legacy_url, payload=multipart_body, headers=multipart_headers)
               upload_mode = "legacy-multipart-post"
 
+          # Safety check: keep deposition as draft only (no DOI minting in workflow).
+          draft_after_upload = request_json("GET", draft_url)
+          if bool(draft_after_upload.get("submitted")):
+              fail(
+                  "Zenodo deposition is marked submitted/published after upload. "
+                  "Workflow must leave Zenodo in draft state."
+              )
+
           draft_html_url = (
               links.get("latest_draft_html")
               or links.get("html")
@@ -423,6 +431,7 @@ jobs:
               summary.write(f"Zenodo draft updated: {draft_html_url}\n")
               summary.write(f"Upload mode: {upload_mode}\n")
               summary.write("PDF uploaded and release notes copied to metadata description.\n")
+              summary.write("Zenodo draft state verified: submitted=false.\n")
               summary.write("Draft was not published; DOI minting remains a manual step.\n")
           PY
 

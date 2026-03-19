@@ -3,9 +3,7 @@ title: "The IPBES long-term vision of data and knowledge management"
 subtitle: "Version {{< meta version >}} · {{< meta release_date >}}"
 version: "1.1"
 release_date: "April 2022"
-concept_doi: "10.5072/zenodo.472195"
-# Is a real concept DOI - ONLY FOR TESTING OF older-releases.qmd render
-# concept_doi: "10.5281/zenodo.3551078" 
+concept_doi: "10.5281/zenodo.5513473"
 contact_email: "tsu.data@ipbes.net"
 release_notes: |
   - This is a test release
@@ -103,7 +101,9 @@ pdf_line <- if (build_pdf) {
 }
 ```
 
-## Release Metadata
+\newpage
+
+## Release Metadata {.unnumbered}
 
 - **Version:** `r version`
 - **Release date:** `r release_date`
@@ -111,7 +111,7 @@ pdf_line <- if (build_pdf) {
 - **Latest-version DOI:** `r if (!identical(concept_doi, "") && !identical(concept_doi_url, "")) sprintf("[%s](%s)", concept_doi, concept_doi_url) else "N/A"`
 - **PDF:** `r if (knitr::is_html_output()) pdf_line else "Download latest PDF from the website."`
 
-### Release Notes
+## Release Notes {.unnumbered}
 
 ```{r, results='asis'}
 if (!identical(trimws(release_notes), "")) {
@@ -136,6 +136,8 @@ if (knitr::is_html_output()) {
 }
 ```
 
+
+\newpage
 
 ## Introduction
 
