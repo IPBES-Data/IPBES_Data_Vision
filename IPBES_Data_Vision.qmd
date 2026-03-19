@@ -103,6 +103,8 @@ pdf_line <- if (build_pdf) {
 }
 ```
 
+\newpage
+
 ## Release Metadata
 
 - **Version:** `r version`
@@ -136,6 +138,8 @@ if (knitr::is_html_output()) {
 }
 ```
 
+
+\newpage
 
 ## Introduction
 

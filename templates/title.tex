@@ -8,6 +8,7 @@ $endif$
 \usepackage{geometry}
 \usepackage{hyperref}
 
+
 \usepackage{titlesec}
 
 % Section numbering
@@ -41,6 +42,8 @@ $endif$
 
 \ifPDFTeX
   \usepackage{newtxtext,newtxmath}
+  \usepackage[scaled=0.92]{helvet}
+  \newcommand{\arialfont}{\sffamily}
 \else
   \usepackage{fontspec}
   \setmainfont{Times New Roman}
@@ -57,6 +60,12 @@ $endif$
 \renewcommand{\headrulewidth}{0.5pt}
 \renewcommand{\footrulewidth}{0pt}
 \renewcommand{\headrule}{\hbox to\headwidth{\leaders\hrule height \headrulewidth\hfill}}
+
+\makeatletter
+\renewcommand{\l@section}{\@dottedtocline{1}{0em}{3.5em}}
+\renewcommand{\l@subsection}{\@dottedtocline{2}{3.5em}{2.5em}}
+\renewcommand{\l@subsubsection}{\@dottedtocline{3}{6em}{3em}}
+\makeatother
 
 \makeatletter
 \renewcommand{\maketitle}{
@@ -87,7 +96,7 @@ $endif$
 \noindent\rule{\textwidth}{0.5pt}\par
 \vspace{0.14cm}
   
-%  ipbes logo
+% ipbes logo
 
   \noindent
   \begin{minipage}[c]{0.30\textwidth}
@@ -125,7 +134,8 @@ $endif$
 DOI: $if(doi)$\href{https://doi.org/$doi$}{$doi$}$else$\textbf{Will be inserted upon release}$endif$}
 \vspace{0.30cm}
 
-{\fontsize{12}{14}\selectfont $if(title)$$title$$else$This document$endif$ is a product of the IPBES task force on knowledge and data.\par}
+{\fontsize{12}{14}\selectfont
+$if(title)$The document titled $title$$else$This document$endif$ is a product of the IPBES task force on knowledge and data.\par}
 \vspace{0.30cm}
 
 {\fontsize{12}{14}\selectfont Editors:\par}
@@ -137,7 +147,7 @@ $endif$
 \vspace{0.30cm}
 
 {\fontsize{12}{14}\selectfont Suggested citation:\par}
-{\fontsize{12}{14}\selectfont IPBES ($if(release_date)$$release_date$$else$YYYY-MM-DD$endif$): $if(title)$$title$$else$IPBES Long-term Vision on Data and Knowledge Management$endif$ ver. $if(version)$$version$$else$1.0$endif$, $if(editors)$$for(editors)$$editors.name$$sep$, $endfor$ (eds.)$else$Editors TBD$endif$. IPBES secretariat, Bonn, Germany. DOI: $if(doi)$$doi$$else$\textbf{Will be inserted upon release}$endif$\par}
+{\fontsize{12}{14}\selectfont IPBES ($if(release_date)$$release_date$$else$YYYY-MM-DD$endif$): $if(title)$$title$$else$IPBES Long-term Vision on Data and Knowledge Management$endif$ ver. $if(version)$$version$$else$1.0$endif$, $if(editors)$$for(editors)$$editors.name$$sep$, $endfor$ (eds.)$else$Editors TBD$endif$. IPBES secretariat, Bonn, Germany. DOI: $if(doi)$\href{https://doi.org/$doi$}{$doi$}$else$\textbf{Will be inserted upon release}$endif$\par}
 \vspace{0.30cm}
 
 {\fontsize{12}{14}\selectfont
