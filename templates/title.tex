@@ -8,6 +8,37 @@ $endif$
 \usepackage{geometry}
 \usepackage{hyperref}
 
+\usepackage{titlesec}
+
+% Section numbering
+\renewcommand{\thesection}{\Roman{section}}
+\renewcommand{\thesubsection}{\Alph{subsection}}
+\renewcommand{\thesubsubsection}{\arabic{subsubsection}}
+
+% H1 / \section
+\titleformat{\section}[block]
+  {\normalfont\bfseries\fontsize{20}{22}\selectfont}
+  {\thesection.\enspace}
+  {0pt}
+  {}
+\titlespacing*{\section}{2.0em}{1.6em}{0.7em}
+
+% H2 / \subsection
+\titleformat{\subsection}[hang]
+  {\normalfont\bfseries\fontsize{15}{17}\selectfont}
+  {\thesubsection.}
+  {1em}
+  {}
+\titlespacing*{\subsection}{0pt}{1.0em}{0.4em}
+
+% H3 / \subsubsection
+\titleformat{\subsubsection}[hang]
+  {\normalfont\bfseries\fontsize{13}{15}\selectfont}
+  {\thesubsubsection.}
+  {0.8em}
+  {}
+\titlespacing*{\subsubsection}{0pt}{0.8em}{0.3em}
+
 \ifPDFTeX
   \usepackage{newtxtext,newtxmath}
 \else
@@ -89,30 +120,29 @@ $endif$
   \thispagestyle{fancy}
 
   \vspace*{\fill}
-  
-  \noindent{\fontsize{12}{14}\selectfont\bfseries DOI: $if(doi)$$doi$$else$\textbf{Will be inserted upon release}$endif$}
-  \vspace{0.30cm}
 
-  {\fontsize{12}{14}\selectfont $if(title)$$title$$else$This document$endif$ is a product of the IPBES task force on knowledge and data.\par}
-  \vspace{0.30cm}
+\noindent{\fontsize{12}{14}\selectfont\bfseries
+DOI: $if(doi)$\href{https://doi.org/$doi$}{$doi$}$else$\textbf{Will be inserted upon release}$endif$}
+\vspace{0.30cm}
 
-  {\fontsize{12}{14}\selectfont Editors:\par}
-  $if(editors)$
-  {\fontsize{12}{14}\selectfont $for(editors)$$editors.name$$sep$, $endfor$\par}
-  $else$
-  {\fontsize{12}{14}\selectfont \textbf{editors missing in yaml frontmatter of IPBES_Data_Vision.qmd} \par}
-  $endif$
-  \vspace{0.30cm}
+{\fontsize{12}{14}\selectfont $if(title)$$title$$else$This document$endif$ is a product of the IPBES task force on knowledge and data.\par}
+\vspace{0.30cm}
 
-  {\fontsize{12}{14}\selectfont Suggested citation:\par}
-  {\fontsize{12}{14}\selectfont IPBES ($if(release_date)$$release_date$$else$YYYY-MM-DD$endif$): $if(title)$$title$$else$IPBES Long-term Vision on Data and Knowledge Management$endif$ ver. $if(version)$$version$$else$1.0$endif$, $if(editors)$$for(editors)$$editors.name$$sep$, $endfor$ (eds.)$else$Editors TBD$endif$. IPBES secretariat, Bonn, Germany. DOI: $if(doi)$$doi$$else$\textbf{Will be inserted upon release}$endif$\par}
-  \vspace{0.30cm}
+{\fontsize{12}{14}\selectfont Editors:\par}
+$if(editors)$
+{\fontsize{12}{14}\selectfont $for(editors)$$editors.name$$sep$, $endfor$\par}
+$else$
+{\fontsize{12}{14}\selectfont \textbf{editors missing in yaml frontmatter of IPBES_Data_Vision.qmd} \par}
+$endif$
+\vspace{0.30cm}
 
-  \noindent{\fontsize{12}{14}\selectfont\bfseries
-  DOI: $if(doi)$\href{https://doi.org/$doi$}{$doi$}$else$\textbf{Will be inserted upon release}$endif$}
+{\fontsize{12}{14}\selectfont Suggested citation:\par}
+{\fontsize{12}{14}\selectfont IPBES ($if(release_date)$$release_date$$else$YYYY-MM-DD$endif$): $if(title)$$title$$else$IPBES Long-term Vision on Data and Knowledge Management$endif$ ver. $if(version)$$version$$else$1.0$endif$, $if(editors)$$for(editors)$$editors.name$$sep$, $endfor$ (eds.)$else$Editors TBD$endif$. IPBES secretariat, Bonn, Germany. DOI: $if(doi)$$doi$$else$\textbf{Will be inserted upon release}$endif$\par}
+\vspace{0.30cm}
 
-  {\fontsize{12}{14}\selectfont
-  Inquiries should be directed to $if(contact_email)$\href{mailto:$contact_email$}{$contact_email$}$else$\href{mailto:tsu.data@ipbes.net}{tsu.data@ipbes.net}$endif$\par}
+{\fontsize{12}{14}\selectfont
+Inquiries should be directed to $if(contact_email)$\href{mailto:$contact_email$}{$contact_email$}$else$\href{mailto:tsu.data@ipbes.net}{tsu.data@ipbes.net}$endif$\par}
+
   \restoregeometry
   \clearpage
 }
