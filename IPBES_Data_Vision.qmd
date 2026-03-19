@@ -105,7 +105,7 @@ pdf_line <- if (build_pdf) {
 
 \newpage
 
-## Release Metadata
+## Release Metadata {.unnumbered}
 
 - **Version:** `r version`
 - **Release date:** `r release_date`
@@ -113,7 +113,7 @@ pdf_line <- if (build_pdf) {
 - **Latest-version DOI:** `r if (!identical(concept_doi, "") && !identical(concept_doi_url, "")) sprintf("[%s](%s)", concept_doi, concept_doi_url) else "N/A"`
 - **PDF:** `r if (knitr::is_html_output()) pdf_line else "Download latest PDF from the website."`
 
-### Release Notes
+## Release Notes {.unnumbered}
 
 ```{r, results='asis'}
 if (!identical(trimws(release_notes), "")) {
