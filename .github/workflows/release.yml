@@ -301,6 +301,7 @@ jobs:
           import urllib.error
           import urllib.parse
           import urllib.request
+          import uuid
 
           def fail(message):
               print(message, file=sys.stderr)
@@ -353,8 +354,6 @@ jobs:
           draft = request_json("GET", draft_url)
           links = draft.get("links") or {}
           bucket_url = links.get("bucket") or ""
-          if not bucket_url:
-              fail("Zenodo draft response missing bucket URL.")
 
           release_notes = ""
           if repo and release_id and github_token:
@@ -374,14 +373,45 @@ jobs:
           request_json("PUT", draft_url, payload={"metadata": metadata})
 
           filename = os.path.basename(pdf_file)
-          upload_url = f"{bucket_url.rstrip('/')}/{urllib.parse.quote(filename)}"
           with open(pdf_file, "rb") as fh:
               pdf_data = fh.read()
-          upload_headers = {
-              "Authorization": f"Bearer {token}",
-              "Content-Type": "application/pdf",
-          }
-          _body, _status = request_raw("PUT", upload_url, payload=pdf_data, headers=upload_headers)
+
+          if bucket_url:
+              upload_url = f"{bucket_url.rstrip('/')}/{urllib.parse.quote(filename)}"
+              upload_headers = {
+                  "Authorization": f"Bearer {token}",
+                  "Content-Type": "application/pdf",
+              }
+              _body, _status = request_raw("PUT", upload_url, payload=pdf_data, headers=upload_headers)
+              upload_mode = "bucket-put"
+          else:
+              files = draft.get("files") or []
+              for file_entry in files:
+                  file_name = (
+                      str(file_entry.get("filename") or file_entry.get("key") or file_entry.get("name") or "")
+                  )
+                  file_id = file_entry.get("id")
+                  if file_name == filename and file_id:
+                      delete_url = f"{base}/api/deposit/depositions/{draft_id}/files/{file_id}?access_token={token_q}"
+                      request_raw("DELETE", delete_url)
+
+              boundary = f"----codex{uuid.uuid4().hex}"
+              preamble = (
+                  f"--{boundary}\r\n"
+                  f'Content-Disposition: form-data; name="name"\r\n\r\n'
+                  f"{filename}\r\n"
+                  f"--{boundary}\r\n"
+                  f'Content-Disposition: form-data; name="file"; filename="{filename}"\r\n'
+                  f"Content-Type: application/pdf\r\n\r\n"
+              ).encode("utf-8")
+              epilogue = f"\r\n--{boundary}--\r\n".encode("utf-8")
+              multipart_body = preamble + pdf_data + epilogue
+              multipart_headers = {
+                  "Content-Type": f"multipart/form-data; boundary={boundary}",
+              }
+              upload_legacy_url = f"{base}/api/deposit/depositions/{draft_id}/files?access_token={token_q}"
+              _body, _status = request_raw("POST", upload_legacy_url, payload=multipart_body, headers=multipart_headers)
+              upload_mode = "legacy-multipart-post"
 
           draft_html_url = (
               links.get("latest_draft_html")
@@ -391,6 +421,7 @@ jobs:
           print(f"Uploaded PDF to Zenodo draft deposition {draft_id}.")
           with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as summary:
               summary.write(f"Zenodo draft updated: {draft_html_url}\n")
+              summary.write(f"Upload mode: {upload_mode}\n")
               summary.write("PDF uploaded and release notes copied to metadata description.\n")
               summary.write("Draft was not published; DOI minting remains a manual step.\n")
           PY
