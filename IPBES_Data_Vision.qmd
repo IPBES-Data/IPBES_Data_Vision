@@ -3,7 +3,7 @@ title: "The IPBES long-term vision of data and knowledge management"
 subtitle: "Version {{< meta version >}} · {{< meta release_date >}}"
 version: "1.1"
 release_date: "April 2022"
-concept_doi: "10.5281/zenodo.5513473"
+concept_doi: "10.5072/zenodo.472195"
 contact_email: "tsu.data@ipbes.net"
 release_notes: |
   - This is a test release

@@ -18,6 +18,11 @@ This page explains the release lifecycle for the **IPBES Data Management Vision*
 - how GitHub Actions interacts with Zenodo,
 - and where manual Zenodo publish/minting begins.
 
+Core implementation note:
+
+- Release orchestration is centralized in `scripts/release_pipeline.py`.
+- The same script powers both local release runs and GitHub release workflow runs.
+
 ## System Overview
 
 ```{mermaid}
@@ -28,7 +33,10 @@ flowchart TD
   B --> E["Assert expected files"]
 
   F["GitHub Release published"] --> G["Release Publish workflow"]
+  X["Local operator run"] --> Y["make release-local"]
+  Y --> Z["Shared script: scripts/release_pipeline.py"]
   G --> H["Resolve Zenodo target (sandbox|production)"]
+  Z --> H
   H --> I["Read version + concept_doi from frontmatter"]
   I --> J["Reserve Zenodo version DOI"]
   J --> K["Build HTML/PDF with reserved DOI"]
@@ -91,6 +99,30 @@ sequenceDiagram
 | Deploy | Release publish | `release.yml` | Updated `_site` on `gh-pages` |
 | Final publish/mint | Manual | Zenodo UI | Minted/published record |
 
+## Local Release Runner
+
+Use:
+
+1. `make release-local`
+
+Behavior:
+
+1. Runs shared pipeline subcommands in order:
+   - `resolve-target`
+   - `read-frontmatter`
+   - `reserve-doi`
+   - `build-artifacts`
+   - `upload-zenodo-draft`
+2. Reserves DOI and updates Zenodo draft.
+3. Does not mint/publish Zenodo draft.
+4. Does not update GitHub release notes or deploy `gh-pages`.
+
+State/output contract (`.release-state.env`):
+
+1. `IPBES_DOI` and `IPBES_DOI_URL`
+2. `ZENODO_DRAFT_ID`
+3. `PDF_NAME`, `PDF_PATH`, and `LATEST_PDF`
+
 ## Configuration
 
 Repository variables and secrets:
@@ -127,7 +159,7 @@ Release workflow fails on:
 
 1. Missing/invalid `version` or `concept_doi`.
 2. Missing selected base/token for active `ZENODO_TARGET`.
-3. Zenodo DOI reservation failure.
+3. Zenodo DOI reservation failure (including no candidates, unauthorized token, or invalid candidate ids).
 4. Build failure.
 5. Zenodo draft upload failure.
 6. GitHub release asset upload failure.

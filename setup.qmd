@@ -39,6 +39,8 @@ flowchart TD
    - `older-releases.qmd`
    - `RELEASE.qmd`
    - `setup.qmd`
+5. Keep shared release runner script present:
+   - `scripts/release_pipeline.py`
 
 ## Zenodo Setup (Initial Bootstrap)
 
@@ -145,16 +147,17 @@ The release workflow resolves active Zenodo settings once, exports:
 ## Recommended Rollout
 
 1. Set `ZENODO_TARGET=sandbox`.
-2. Publish a test GitHub release.
-3. Confirm in run logs:
+2. Run `make release-local` once to validate token + concept ownership before CI release.
+3. Publish a test GitHub release.
+4. Confirm in run logs:
    - target resolution succeeded
    - DOI reserved in sandbox
    - website and PDF rendered with reserved DOI
    - PDF + release notes uploaded to Zenodo draft
-4. Confirm `_site` deployed correctly and release assets exist.
-5. Switch `ZENODO_TARGET=production`.
-6. Publish official release.
-7. Manually publish/mint Zenodo draft in Zenodo UI.
+5. Confirm `_site` deployed correctly and release assets exist.
+6. Switch `ZENODO_TARGET=production`.
+7. Publish official release.
+8. Manually publish/mint Zenodo draft in Zenodo UI.
 
 ## What Is Automatic vs Manual
 
@@ -166,6 +169,14 @@ Automatic in release workflow:
 4. Upload PDF + notes to Zenodo draft.
 5. Upload PDF to GitHub release.
 6. Deploy `_site` to `gh-pages`.
+
+Automatic in local release runner (`make release-local`):
+
+1. Resolve active Zenodo target/token/base.
+2. Read frontmatter metadata.
+3. Reserve Zenodo DOI.
+4. Build website/PDF with reserved DOI.
+5. Upload PDF + notes to Zenodo draft and verify `submitted=false`.
 
 Manual:
 

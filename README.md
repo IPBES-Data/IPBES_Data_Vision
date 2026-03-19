@@ -44,6 +44,11 @@ Commands:
 - `make build-pdf`
   - Build versioned PDF from frontmatter version into `build/`
   - Update `_site/assets/IPBES-Data-Management-Vision-latest.pdf`
+- `make release-local`
+  - Run shared release pipeline locally (`scripts/release_pipeline.py`)
+  - Resolve Zenodo target, read frontmatter, reserve DOI, build HTML/PDF, upload PDF + notes to Zenodo draft
+  - Uses same Zenodo env contract as CI (`ZENODO_TARGET`, `ZENODO_API_BASE`, `ZENODO_SANDBOX_API_BASE`, `ZENODO_TOKEN`, `ZENODO_SANDBOX_TOKEN`)
+  - Does **not** publish/mint Zenodo draft and does **not** deploy `gh-pages`
 - `make build`
   - Run all targets above (public pages, hidden docs, and latest PDF)
 
@@ -69,7 +74,9 @@ Commands:
 
 - PR checks: `.github/workflows/pr-check.yml`
 - Release publish: `.github/workflows/release.yml`
-- Release workflow reserves a Zenodo version DOI before rendering, injects it via `IPBES_DOI`, appends the DOI to GitHub release notes, builds website/PDF artifacts, uploads the PDF to the release, and deploys `_site/` to `gh-pages`.
+- Shared release runner: `scripts/release_pipeline.py` (used by both local release and GitHub release workflow).
+- Release workflow reserves a Zenodo version DOI before rendering, injects it via `IPBES_DOI`, appends the DOI to GitHub release notes, builds website/PDF artifacts, uploads PDF + notes to Zenodo draft, uploads the PDF to the release, and deploys `_site/` to `gh-pages`.
+- Zenodo DOI reservation uses robust fallback lookup (conceptrecid depositions, conceptdoi depositions, then conceptdoi records) and fails with classified diagnostics on ownership/authorization issues.
 - Required release secrets/variables:
   - `ZENODO_TARGET` (repository variable: `sandbox` or `production`; defaults to `production` if unset/invalid)
   - `ZENODO_API_BASE` (repository variable: production API base URL)
@@ -78,6 +85,7 @@ Commands:
   - `ZENODO_SANDBOX_TOKEN` (secret used when `ZENODO_TARGET=sandbox`)
 - Switch environments by changing only `ZENODO_TARGET`.
 - Release workflow reads `version` and `concept_doi` from `IPBES_Data_Vision.qmd` frontmatter and derives Zenodo concept record id from `concept_doi`.
+- Release workflow keeps Zenodo deposition in draft state (`submitted=false`); mint/publish is manual in Zenodo UI.
 
 ## Key Documents
 
