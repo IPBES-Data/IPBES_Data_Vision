@@ -1,0 +1,268 @@
+[
+  {
+    "objectID": "help_admin.html",
+    "href": "help_admin.html",
+    "title": "Admin Help Hub",
+    "section": "",
+    "text": "This hidden page provides quick access to the repository’s internal admin and operations documentation.\nThese documents are intended for maintainers and template adopters, and are not linked from the public navigation pages."
+  },
+  {
+    "objectID": "help_admin.html#hidden-admin-docs",
+    "href": "help_admin.html#hidden-admin-docs",
+    "title": "Admin Help Hub",
+    "section": "Hidden Admin Docs",
+    "text": "Hidden Admin Docs\n\nRelease Process\nOperational flow for PR checks and release publication, including DOI reservation, Zenodo draft upload, and manual minting boundary.\nOpen release.html\n\n\nTemplate Setup Guide\nStep-by-step setup for new repositories created from this template, including required GitHub variables/secrets and sandbox-to-production rollout.\nOpen setup.html"
+  },
+  {
+    "objectID": "release.html",
+    "href": "release.html",
+    "title": "Release Process",
+    "section": "",
+    "text": "This page explains the release lifecycle for the IPBES Data Management Vision:\n\nwhat runs on pull requests,\nwhat runs when a GitHub release is published,\nhow GitHub Actions interacts with Zenodo,\nand where manual Zenodo publish/minting begins.\n\nCore implementation note:\n\nRelease orchestration is centralized in scripts/release_pipeline.py.\nThe same script powers both local release runs and GitHub release workflow runs."
+  },
+  {
+    "objectID": "release.html#purpose",
+    "href": "release.html#purpose",
+    "title": "Release Process",
+    "section": "",
+    "text": "This page explains the release lifecycle for the IPBES Data Management Vision:\n\nwhat runs on pull requests,\nwhat runs when a GitHub release is published,\nhow GitHub Actions interacts with Zenodo,\nand where manual Zenodo publish/minting begins.\n\nCore implementation note:\n\nRelease orchestration is centralized in scripts/release_pipeline.py.\nThe same script powers both local release runs and GitHub release workflow runs."
+  },
+  {
+    "objectID": "release.html#system-overview",
+    "href": "release.html#system-overview",
+    "title": "Release Process",
+    "section": "2 System Overview",
+    "text": "2 System Overview\n\n\n\n\n\nflowchart TD\n  A[\"Pull Request to main\"] --&gt; B[\"PR Checks workflow\"]\n  B --&gt; C[\"Render pages: index, older-releases, release (hidden)\"]\n  B --&gt; D[\"Render PDF artifact\"]\n  B --&gt; E[\"Assert expected files\"]\n\n  F[\"GitHub Release published\"] --&gt; G[\"Release Publish workflow\"]\n  X[\"Local operator run\"] --&gt; Y[\"make release-local\"]\n  Y --&gt; Z[\"Shared script: scripts/release_pipeline.py\"]\n  G --&gt; H[\"Resolve Zenodo target (sandbox|production)\"]\n  Z --&gt; H\n  H --&gt; I[\"Read version + concept_doi from frontmatter\"]\n  I --&gt; J[\"Reserve Zenodo version DOI\"]\n  J --&gt; K[\"Build HTML/PDF with reserved DOI\"]\n  K --&gt; L[\"Upload PDF + release notes to Zenodo draft\"]\n  K --&gt; M[\"Upload PDF to GitHub Release assets\"]\n  K --&gt; N[\"Deploy _site to gh-pages\"]\n  L --&gt; O[\"Manual Zenodo publish/mint\"]"
+  },
+  {
+    "objectID": "release.html#pr-validation-flow",
+    "href": "release.html#pr-validation-flow",
+    "title": "Release Process",
+    "section": "3 PR Validation Flow",
+    "text": "3 PR Validation Flow\n\n\n\n\n\nflowchart LR\n  PR[\"PR opened or updated\"] --&gt; S1[\"Checkout + setup R/Quarto/TinyTeX\"]\n  S1 --&gt; S2[\"Render website HTML\"]\n  S2 --&gt; S3[\"Render PDF artifact\"]\n  S3 --&gt; S4[\"Assert required artifacts\"]\n  S4 --&gt; RES[\"Pass/Fail status\"]\n\n\n\n\n\n\nExpected PR artifacts:\n\n_site/index.html\n_site/older-releases.html\n_site/assets/IPBES-Data-Management-Vision-latest.pdf"
+  },
+  {
+    "objectID": "release.html#release-publish-flow",
+    "href": "release.html#release-publish-flow",
+    "title": "Release Process",
+    "section": "4 Release Publish Flow",
+    "text": "4 Release Publish Flow\n\n\n\n\n\nsequenceDiagram\n  participant U as Maintainer\n  participant GH as GitHub Actions\n  participant Z as Zenodo\n  participant GR as GitHub Release\n  participant GP as gh-pages\n\n  U-&gt;&gt;GR: Publish release\n  GH-&gt;&gt;GH: Resolve ZENODO_TARGET\n  GH-&gt;&gt;GH: Read version + concept_doi\n  GH-&gt;&gt;Z: Create new draft version and reserve DOI\n  Z--&gt;&gt;GH: Reserved DOI + draft deposition id\n  GH-&gt;&gt;GR: Append \"Version DOI: https://doi.org/&lt;doi&gt;\"\n  GH-&gt;&gt;GH: Build website and PDF (using IPBES_DOI)\n  GH-&gt;&gt;Z: Upload PDF + release notes to draft\n  GH-&gt;&gt;GR: Upload PDF asset\n  GH-&gt;&gt;GP: Deploy _site\n  Note over Z,U: Draft remains unpublished.\\nMinting is manual in Zenodo UI."
+  },
+  {
+    "objectID": "release.html#stage-matrix",
+    "href": "release.html#stage-matrix",
+    "title": "Release Process",
+    "section": "5 Stage Matrix",
+    "text": "5 Stage Matrix\n\n\n\n\n\n\n\n\n\nStage\nTrigger\nAutomation\nOutput\n\n\n\n\nPR check\nPull request\npr-check.yml\nValidation status + artifacts\n\n\nTarget selection\nRelease publish\nrelease.yml\nActive Zenodo base/token\n\n\nDOI reservation\nRelease publish\nrelease.yml + Zenodo\nReserved version DOI\n\n\nBuild\nRelease publish\nrelease.yml\nHTML + versioned PDF\n\n\nZenodo draft upload\nRelease publish\nrelease.yml + Zenodo\nDraft updated (PDF + notes)\n\n\nGitHub release upload\nRelease publish\nrelease.yml\nPDF asset on release\n\n\nDeploy\nRelease publish\nrelease.yml\nUpdated _site on gh-pages\n\n\nFinal publish/mint\nManual\nZenodo UI\nMinted/published record"
+  },
+  {
+    "objectID": "release.html#local-release-runner",
+    "href": "release.html#local-release-runner",
+    "title": "Release Process",
+    "section": "6 Local Release Runner",
+    "text": "6 Local Release Runner\nUse:\n\nmake release-local\n\nBehavior:\n\nRuns shared pipeline subcommands in order:\n\nresolve-target\nread-frontmatter\nreserve-doi\nbuild-artifacts\nupload-zenodo-draft\n\nReserves DOI and updates Zenodo draft.\nDoes not mint/publish Zenodo draft.\nDoes not update GitHub release notes or deploy gh-pages.\n\nState/output contract (.release-state.env):\n\nIPBES_DOI and IPBES_DOI_URL\nZENODO_DRAFT_ID\nPDF_NAME, PDF_PATH, and LATEST_PDF"
+  },
+  {
+    "objectID": "release.html#configuration",
+    "href": "release.html#configuration",
+    "title": "Release Process",
+    "section": "7 Configuration",
+    "text": "7 Configuration\nRepository variables and secrets:\n\nZENODO_TARGET: sandbox or production (defaults to production if unset/invalid)\nZENODO_API_BASE: production Zenodo API base\nZENODO_SANDBOX_API_BASE: sandbox Zenodo API base\nZENODO_TOKEN: production token (used when ZENODO_TARGET=production)\nZENODO_SANDBOX_TOKEN: sandbox token (used when ZENODO_TARGET=sandbox)\n\nSwitching environment is done by changing only ZENODO_TARGET."
+  },
+  {
+    "objectID": "release.html#frontmatter-inputs",
+    "href": "release.html#frontmatter-inputs",
+    "title": "Release Process",
+    "section": "8 Frontmatter Inputs",
+    "text": "8 Frontmatter Inputs\nThe release workflow reads these fields from IPBES_Data_Vision.qmd frontmatter:\n\nversion\nconcept_doi\nrelease_date\nrelease_notes\neditors\ncontact_email\n\nBehavior rules:\n\nReserved DOI is injected as IPBES_DOI at release build time.\nIf DOI is unavailable, output displays **Will be inserted upon release**.\nconcept_doi is used for latest-version reference and all-releases lookup.\nZENODO_CONCEPTRECID is derived from concept_doi."
+  },
+  {
+    "objectID": "release.html#failure-conditions",
+    "href": "release.html#failure-conditions",
+    "title": "Release Process",
+    "section": "9 Failure Conditions",
+    "text": "9 Failure Conditions\nRelease workflow fails on:\n\nMissing/invalid version or concept_doi.\nMissing selected base/token for active ZENODO_TARGET.\nZenodo DOI reservation failure (including no candidates, unauthorized token, or invalid candidate ids).\nBuild failure.\nZenodo draft upload failure.\nGitHub release asset upload failure.\ngh-pages deployment failure."
+  },
+  {
+    "objectID": "release.html#post-release-checklist",
+    "href": "release.html#post-release-checklist",
+    "title": "Release Process",
+    "section": "10 Post-Release Checklist",
+    "text": "10 Post-Release Checklist\n\nWorkflow run is green.\nSite is updated on gh-pages.\nGitHub release has attached PDF.\nHTML/PDF show reserved DOI.\nZenodo draft contains uploaded PDF and release notes.\nRelease notes include exactly one DOI line.\nZenodo draft is published manually when ready."
+  },
+  {
+    "objectID": "release.html#change-log",
+    "href": "release.html#change-log",
+    "title": "Release Process",
+    "section": "11 Change Log",
+    "text": "11 Change Log\n\n2026-03-04: Initial release automation specification created.\n2026-03-18: Updated to pre-reserve Zenodo DOI and append DOI to GitHub release notes.\n2026-03-18: Converted to Quarto (RELEASE.qmd) and rendered as hidden release.html.\n2026-03-18: Added Mermaid diagrams and stage-oriented release documentation."
+  },
+  {
+    "objectID": "index.html#release-metadata",
+    "href": "index.html#release-metadata",
+    "title": "The IPBES long-term vision of data and knowledge management",
+    "section": "Release Metadata",
+    "text": "Release Metadata\n\nVersion: 1.1\nRelease date: April 2022\nDOI: 10.5281/zenodo.472294\nLatest-version DOI: 10.5072/zenodo.472195\nPDF: Download latest PDF"
+  },
+  {
+    "objectID": "index.html#release-notes",
+    "href": "index.html#release-notes",
+    "title": "The IPBES long-term vision of data and knowledge management",
+    "section": "Release Notes",
+    "text": "Release Notes\n\nThis is a test release\nInitial living-document baseline established.\nYAML-driven track generation removed in favor of a single-source document.\nRendering switched to Quarto website defaults with _site output.\n\n\nVision | All Releases | Latest PDF"
+  },
+  {
+    "objectID": "index.html#introduction",
+    "href": "index.html#introduction",
+    "title": "The IPBES long-term vision of data and knowledge management",
+    "section": "1 Introduction",
+    "text": "1 Introduction\nThe long-term vision on data and knowledge management provides the overall direction for how IPBES will organise, manage and deliver data and knowledge across its work programme up to 2030. It sets out the long-term ambition of the Platform in this area and outlines the targets and pathways needed to achieve it. While the data and knowledge management policy defines the principles, standards and procedures that govern data and knowledge management within IPBES, the long-term vision describes the desired state toward which these efforts are directed.\nThis vision outlines the main objectives, guiding principles and operational tracks that will ensure that all IPBES products are transparent, traceable, accessible and reusable. It supports the delivery of the four core functions of IPBES and complements both the data and knowledge management policy and the code of practice on the use of artificial intelligence, tailored to the needs of assessments. It also provides the framework for the continued integration of the FAIR and CARE principles in all aspects of data and knowledge management within IPBES.\nThe implementation of this vision will be pursued through two closely linked tracks: (i) data and knowledge management within IPBES, focusing on the organisation, documentation and curation of information used and generated in assessments; and (ii) delivery and monitoring of IPBES products, focusing on their accessibility, interoperability and long-term preservation. Together, these tracks form a coherent structure to guide actions up to 2030 and to inform the development of a strategic roadmap in the next intersessional period."
+  },
+  {
+    "objectID": "index.html#vision-and-aims",
+    "href": "index.html#vision-and-aims",
+    "title": "The IPBES long-term vision of data and knowledge management",
+    "section": "2 Vision and aims",
+    "text": "2 Vision and aims\nBy 2030, IPBES ensures the open and transparent exchange of knowledge and data between science, policy and society regarding its products and processes, and contributes to strengthening similar exchanges more broadly in support of biodiversity, ecosystem services and human well-being. Data, processes and workflows supporting the Platform in fulfilling its mandate will be fully compliant with the FAIR and CARE principles and will make responsible use of new and emerging technologies, including artificial intelligence, to enhance the quality, efficiency, accessibility, and distribution of IPBES products.\nPursuing this vision will foster stronger collaboration, greater efficiency in production and distribution, and improved impact of IPBES products in bridging science, policy and society. The following aims provide the basis for moving towards this vision:\n\nEnsure that all IPBES products and their underlying knowledge and data follow the FAIR and CARE principles;\nStrengthen and institutionalise connections within IPBES concerning data and knowledge, including collaboration among all task forces and technical support units;\nStrengthen engagement with all relevant stakeholders, including Indigenous Peoples and local communities, on matters of data and knowledge, to enhance the scientific credibility, legitimacy and uptake of IPBES products; and\nRegularly assess new and advancing technologies, including artificial intelligence, for their potential to support this vision and suggest their use where appropriate."
+  },
+  {
+    "objectID": "index.html#roadmap-up-to-2030",
+    "href": "index.html#roadmap-up-to-2030",
+    "title": "The IPBES long-term vision of data and knowledge management",
+    "section": "3 Roadmap up to 2030",
+    "text": "3 Roadmap up to 2030\nThe roadmap up to 2030 is structured around two complementary tracks that together support the implementation of the long-term vision. Each track addresses one essential aspect of data and knowledge management and is accompanied by specific targets designed to enhance the transparency, accessibility and interoperability of IPBES products. Progress within these tracks will ensure the realisation of the four aims of the long-term vision and strengthen the science policy interface across all functions of the Platform."
+  },
+  {
+    "objectID": "index.html#track-1-data-and-knowledge-management-within-ipbes",
+    "href": "index.html#track-1-data-and-knowledge-management-within-ipbes",
+    "title": "The IPBES long-term vision of data and knowledge management",
+    "section": "4 Track 1: Data and knowledge management within IPBES",
+    "text": "4 Track 1: Data and knowledge management within IPBES\n\nBody of knowledge - By 2030, IPBES will have established the IPBES body of knowledge (IPBES BoK), a coherent framework connecting all data and knowledge used or generated through IPBES assessments. The BoK will document workflows, variables, indicators and identified knowledge gaps to ensure full transparency and traceability. It will serve as the central reference for linking assessment findings to their supporting evidence and will form the backbone for the future delivery of IPBES products.\nPolicy framework - All data and knowledge included in the IPBES BoK will follow the standards and procedures set out in the data and knowledge management policy and its annexes, including the FAIR and CARE principles and the code of practice on the use of artificial intelligence, tailored to the needs of assessments. The overarching goal is to improve data traceability, accountability, transparency, interoperability, reproducibility and ethical use across all IPBES activities.\nStandards and identifiers - Adherence to widely recognised interoperability standards will facilitate discovery, access and citation of data and knowledge. Persistent identifiers will be used for attribution and citation, ensuring that the original authors and contributors receive credit and that the use of IPBES products is traceable.\nAccess and stakeholders - IPBES members and stakeholders, including Indigenous Peoples and local communities, will be able to access and use IPBES products and the underlying knowledge and data documented in their production, ensuring equitable benefits from their use.\nScope and external data - While IPBES products rely extensively on external data and knowledge, including Indigenous and local knowledge, their management remains outside the direct scope of IPBES. However, IPBES will provide guidance encouraging the use of external data that follow the FAIR and CARE principles and other provisions of the data and knowledge management policy."
+  },
+  {
+    "objectID": "index.html#track-2-delivery-and-monitoring-of-ipbes-products",
+    "href": "index.html#track-2-delivery-and-monitoring-of-ipbes-products",
+    "title": "The IPBES long-term vision of data and knowledge management",
+    "section": "5 Track 2: Delivery and monitoring of IPBES products",
+    "text": "5 Track 2: Delivery and monitoring of IPBES products\n\nData delivery platform - By 2030, IPBES will operate a data delivery platform (IPBES DDP) that provides user friendly access to IPBES products, the data generated during their production and curated links to relevant external datasets. The DDP will draw on the IPBES BoK and follow the data and knowledge management policy to ensure consistent metadata, standards and attribution.\nMonitoring and reporting - Real time monitoring will provide information on the use and reach of IPBES products and on continued adherence to the data and knowledge management policy.\nConnections (internal and external) - Connections between IPBES products and datasets will be maintained and published to improve accessibility and enable cross product searches. Links between IPBES products and relevant external documents, such as national environmental policies, private sector standards and external data providers, will also be identified and published where appropriate.\nDynamic updating and versioning - IPBES will implement tools to monitor the availability of underlying external datasets, check compliance with the data and knowledge management policy and allow the automatic update of figures, tables and other visualisations that rely on dynamically changing data. Versioning of final IPBES products will be introduced to enable updates based on continuously delivered data, aligned with the concept of living or dynamic documents.\nStakeholder access and ILK sharing - The use of IPBES products, including the uptake of identified knowledge gaps, will be monitored and shared with IPBES members and stakeholders, including Indigenous Peoples and local communities. IPBES will ensure that final products incorporating Indigenous and local knowledge are shared back with the relevant knowledge holders to support dialogue and equitable benefit sharing.\nTraining and feedback - By 2030, IPBES will offer online training materials demonstrating how to access, navigate and use IPBES products, data and associated knowledge, along with open feedback channels for users and stakeholders."
+  },
+  {
+    "objectID": "index.html#targets-of-the-roadmap",
+    "href": "index.html#targets-of-the-roadmap",
+    "title": "The IPBES long-term vision of data and knowledge management",
+    "section": "6 Targets of the roadmap",
+    "text": "6 Targets of the roadmap\nThe targets for data and knowledge management and delivery up to 2030 are aligned with the six objectives of the IPBES rolling work programme to 2030: (1) assessing knowledge; (2) building capacity; (3) strengthening knowledge foundations; (4) supporting policy; (5) communicating and engaging; and (6) improving platform effectiveness. Progress toward these targets will guide implementation of the two tracks of the long-term vision and contribute to achieving the four aims of the long-term vision."
+  },
+  {
+    "objectID": "index.html#track-1-data-and-knowledge-management-within-ipbes-1",
+    "href": "index.html#track-1-data-and-knowledge-management-within-ipbes-1",
+    "title": "The IPBES long-term vision of data and knowledge management",
+    "section": "7 Track 1: Data and knowledge management within IPBES",
+    "text": "7 Track 1: Data and knowledge management within IPBES\nTarget 1.1 – By 2023, set up a public bibliographic library containing the underlying bibliographic records of IPBES products. (Objectives 1 & 3)\nTarget 1.2 – Starting in 2024, revise the IPBES data and knowledge management policy every two years and support its consistent implementation across the Platform. (Objective 3)\nTarget 1.3 – By 2025, ensure that all IPBES products adhere to the CARE principles (Collective Benefit, Authority to Control, Responsibility and Ethics). (Objectives 3 & 5)\nTarget 1.4 – By 2026, establish the IPBES BoK as a structured and publicly findable framework documenting all underlying resources used in IPBES products. (Objective 3)\nTarget 1.5 – By 2027, ensure that all IPBES products fully adhere to the FAIR principles (Findable, Accessible, Interoperable and Reusable). (Objective 3)"
+  },
+  {
+    "objectID": "index.html#track-2-delivery-and-monitoring-of-ipbes-products-1",
+    "href": "index.html#track-2-delivery-and-monitoring-of-ipbes-products-1",
+    "title": "The IPBES long-term vision of data and knowledge management",
+    "section": "8 Track 2: Delivery and monitoring of IPBES products",
+    "text": "8 Track 2: Delivery and monitoring of IPBES products\nTarget 2.1 – By 2026, disseminate knowledge gaps identified in IPBES products in a structured format with persistent identifiers to enable future monitoring and tracking. (Objective 3)\nTarget 2.2 By 2026, establish explicit computational links between IPBES products and relevant policy tools and methodologies to enhance policy support. (Objectives 3 & 4)\nTarget 2.3 – By 2025, develop a roadmap to strengthen the capacities of stakeholders for accessing and using IPBES data and knowledge. (Objectives 2, 3 & 5)\nTarget 2.4 – By 2026, develop a roadmap to strengthen the capacities of stakeholders, including policy makers, for accessing and using IPBES data and knowledge. (Objectives 2, 3 & 5)\nTarget 2.5 – By 2027, monitor the degree to which external data sources follow the data management and governance principles set out in the IPBES data and knowledge management policy in order to encourage open science. (Objective 3)\nTarget 2.6 – By 2027, monitor the use of and identify potential gaps in tools and methodologies for the delivery of IPBES products to decision makers. (Objectives 4 & 6)\nTarget 2.7 – By 2027, collect feedback from IPBES members and stakeholders, including Indigenous Peoples and local communities and policy makers, on the accessibility, quality and reach of IPBES products in order to improve their impact. (Objectives 5 & 6)\nTarget 2.8 – By 2030, create a technical platform capable of dynamically updating selected aspects of IPBES products according to the availability of new resources. (Objectives 1 & 3)\nTarget 2.9 – By 2030, develop a tracking system to map the use and citation of IPBES products in national, regional and global policies as well as in scientific publications. (Objectives 3 & 4)"
+  },
+  {
+    "objectID": "index.html#suggested-citation",
+    "href": "index.html#suggested-citation",
+    "title": "The IPBES long-term vision of data and knowledge management",
+    "section": "9 Suggested Citation",
+    "text": "9 Suggested Citation\nIPBES (Apri): The IPBES long-term vision of data and knowledge management, version 1.1, Rainer M Krug, Aidin Niamir (eds.). IPBES secretariat, Bonn, Germany. DOI: https://doi.org/10.5281/zenodo.472294"
+  },
+  {
+    "objectID": "older-releases.html",
+    "href": "older-releases.html",
+    "title": "All Releases",
+    "section": "",
+    "text": "Vision | All Releases | Latest PDF"
+  },
+  {
+    "objectID": "older-releases.html#all-releases",
+    "href": "older-releases.html#all-releases",
+    "title": "All Releases",
+    "section": "All Releases",
+    "text": "All Releases\nThis page lists published versions directly from Zenodo using the concept DOI.\nConcept DOI: 10.5072/zenodo.472195\n\nCould not resolve release history during render (No release records found for this concept DOI.). See Zenodo concept page: 10.5072/zenodo.472195"
+  },
+  {
+    "objectID": "setup.html",
+    "href": "setup.html",
+    "title": "Template Setup Guide",
+    "section": "",
+    "text": "This hidden page explains how to initialize a new living-document repository from this template and configure GitHub + Zenodo correctly."
+  },
+  {
+    "objectID": "setup.html#purpose",
+    "href": "setup.html#purpose",
+    "title": "Template Setup Guide",
+    "section": "",
+    "text": "This hidden page explains how to initialize a new living-document repository from this template and configure GitHub + Zenodo correctly."
+  },
+  {
+    "objectID": "setup.html#setup-flow",
+    "href": "setup.html#setup-flow",
+    "title": "Template Setup Guide",
+    "section": "2 Setup Flow",
+    "text": "2 Setup Flow\n\n\n\n\n\nflowchart TD\n  A[\"Create repo from template\"] --&gt; B[\"Set frontmatter in IPBES_Data_Vision.qmd\"]\n  B --&gt; C[\"Configure GitHub variables + secrets\"]\n  C --&gt; D[\"Open PR and pass PR checks\"]\n  D --&gt; E[\"Set ZENODO_TARGET=sandbox and publish test release\"]\n  E --&gt; F[\"Verify DOI reservation + draft upload\"]\n  F --&gt; G[\"Switch ZENODO_TARGET=production\"]\n  G --&gt; H[\"Publish official release\"]\n  H --&gt; I[\"Manually publish/mint Zenodo draft\"]"
+  },
+  {
+    "objectID": "setup.html#repository-prerequisites",
+    "href": "setup.html#repository-prerequisites",
+    "title": "Template Setup Guide",
+    "section": "3 Repository Prerequisites",
+    "text": "3 Repository Prerequisites\n\nEnable GitHub Actions in the new repository.\nEnsure Pages deployment from gh-pages is allowed.\nKeep these workflows present:\n\n.github/workflows/pr-check.yml\n.github/workflows/release.yml\n\nKeep Quarto project render list including:\n\nIPBES_Data_Vision.qmd\nolder-releases.qmd\nRELEASE.qmd\nsetup.qmd\n\nKeep shared release runner script present:\n\nscripts/release_pipeline.py"
+  },
+  {
+    "objectID": "setup.html#zenodo-setup-initial-bootstrap",
+    "href": "setup.html#zenodo-setup-initial-bootstrap",
+    "title": "Template Setup Guide",
+    "section": "4 Zenodo Setup (Initial Bootstrap)",
+    "text": "4 Zenodo Setup (Initial Bootstrap)\nThis template workflow creates new versions from an existing Zenodo concept record.\nTherefore, each environment needs one initial manual Zenodo publication first.\nImportant:\n\nZenodo sandbox and production are separate systems.\nYou must bootstrap each one independently.\n\nZenodo endpoints:\n\nSandbox UI: https://sandbox.zenodo.org\nSandbox API base: https://sandbox.zenodo.org\nProduction UI: https://zenodo.org\nProduction API base: https://zenodo.org\n\nInitial bootstrap steps (run first in sandbox, then production):\n\nCreate Zenodo access token with deposition permissions.\nCreate a new upload in Zenodo manually.\nFill required metadata.\nUpload an initial PDF file.\nPublish the record manually in Zenodo.\nCopy the concept DOI (“all versions DOI”) from the published record page.\nSet concept_doi in IPBES_Data_Vision.qmd to that concept DOI.\n\nAfter bootstrap:\n\nRelease workflow can derive ZENODO_CONCEPTRECID from concept_doi.\nRelease workflow can reserve new version DOIs automatically.\nWorkflow uploads to Zenodo draft, but final draft publish/mint remains manual."
+  },
+  {
+    "objectID": "setup.html#required-frontmatter",
+    "href": "setup.html#required-frontmatter",
+    "title": "Template Setup Guide",
+    "section": "5 Required Frontmatter",
+    "text": "5 Required Frontmatter\nEdit IPBES_Data_Vision.qmd and set:\n\ntitle\nversion\nrelease_date\nconcept_doi\nrelease_notes\neditors\ncontact_email\n\nNotes:\n\nversion is used for release PDF naming.\nconcept_doi is used to derive ZENODO_CONCEPTRECID in release workflow.\nconcept_doi must come from the initial manually published Zenodo record.\nVersion DOI is injected automatically at release time (IPBES_DOI)."
+  },
+  {
+    "objectID": "setup.html#github-variables-and-secrets",
+    "href": "setup.html#github-variables-and-secrets",
+    "title": "Template Setup Guide",
+    "section": "6 GitHub Variables and Secrets",
+    "text": "6 GitHub Variables and Secrets\nSet these at repository level in GitHub:\n\nOpen the repository on GitHub.\nGo to Settings -&gt; Secrets and variables -&gt; Actions.\nIn Variables, add:\n\nZENODO_TARGET\nZENODO_API_BASE\nZENODO_SANDBOX_API_BASE\n\nIn Secrets, add:\n\nZENODO_TOKEN\nZENODO_SANDBOX_TOKEN\n\n\nKeep ZENODO_TARGET as the single environment switch (sandbox or production).\n\n6.1 Variables\n\nZENODO_TARGET\n\nallowed values: sandbox or production\nif unset/invalid, workflow defaults to production\n\nZENODO_API_BASE\n\nproduction API base, e.g. https://zenodo.org\n\nZENODO_SANDBOX_API_BASE\n\nsandbox API base, e.g. https://sandbox.zenodo.org\n\n\n\n\n6.2 Secrets\n\nZENODO_TOKEN\n\nproduction Zenodo token\n\nZENODO_SANDBOX_TOKEN\n\nsandbox Zenodo token"
+  },
+  {
+    "objectID": "setup.html#environment-selection-logic",
+    "href": "setup.html#environment-selection-logic",
+    "title": "Template Setup Guide",
+    "section": "7 Environment Selection Logic",
+    "text": "7 Environment Selection Logic\n\n\n\n\n\nflowchart LR\n  T[\"ZENODO_TARGET\"] --&gt; V{\"value\"}\n  V --&gt;|sandbox| S1[\"Use ZENODO_SANDBOX_API_BASE\"]\n  V --&gt;|sandbox| S2[\"Use ZENODO_SANDBOX_TOKEN\"]\n  V --&gt;|production or invalid| P1[\"Use ZENODO_API_BASE\"]\n  V --&gt;|production or invalid| P2[\"Use ZENODO_TOKEN\"]\n\n\n\n\n\n\nThe release workflow resolves active Zenodo settings once, exports:\n\nACTIVE_ZENODO_TARGET\nACTIVE_ZENODO_API_BASE\nACTIVE_ZENODO_TOKEN"
+  },
+  {
+    "objectID": "setup.html#recommended-rollout",
+    "href": "setup.html#recommended-rollout",
+    "title": "Template Setup Guide",
+    "section": "8 Recommended Rollout",
+    "text": "8 Recommended Rollout\n\nSet ZENODO_TARGET=sandbox.\nRun make release-local once to validate token + concept ownership before CI release.\nPublish a test GitHub release.\nConfirm in run logs:\n\ntarget resolution succeeded\nDOI reserved in sandbox\nwebsite and PDF rendered with reserved DOI\nPDF + release notes uploaded to Zenodo draft\n\nConfirm _site deployed correctly and release assets exist.\nSwitch ZENODO_TARGET=production.\nPublish official release.\nManually publish/mint Zenodo draft in Zenodo UI."
+  },
+  {
+    "objectID": "setup.html#what-is-automatic-vs-manual",
+    "href": "setup.html#what-is-automatic-vs-manual",
+    "title": "Template Setup Guide",
+    "section": "9 What Is Automatic vs Manual",
+    "text": "9 What Is Automatic vs Manual\nAutomatic in release workflow:\n\nReserve Zenodo version DOI.\nAppend DOI line to GitHub release notes.\nBuild HTML/PDF with reserved DOI.\nUpload PDF + notes to Zenodo draft.\nUpload PDF to GitHub release.\nDeploy _site to gh-pages.\n\nAutomatic in local release runner (make release-local):\n\nResolve active Zenodo target/token/base.\nRead frontmatter metadata.\nReserve Zenodo DOI.\nBuild website/PDF with reserved DOI.\nUpload PDF + notes to Zenodo draft and verify submitted=false.\n\nManual:\n\nPublish/mint Zenodo draft record."
+  },
+  {
+    "objectID": "setup.html#validation-checklist-for-new-template-repos",
+    "href": "setup.html#validation-checklist-for-new-template-repos",
+    "title": "Template Setup Guide",
+    "section": "10 Validation Checklist for New Template Repos",
+    "text": "10 Validation Checklist for New Template Repos\n\nmake build succeeds locally.\nPR checks are green on a test PR.\nSandbox release run is green.\n_site/index.html, _site/older-releases.html, and latest PDF exist.\nrelease.html and setup.html render but are not linked in site navigation.\nProduction release run is green."
+  }
+]
