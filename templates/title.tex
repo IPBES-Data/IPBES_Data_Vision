@@ -6,12 +6,14 @@ $endif$
 \usepackage{iftex}
 \usepackage{fancyhdr}
 \usepackage{geometry}
+\usepackage{hyperref}
 
 \ifPDFTeX
   \usepackage{newtxtext,newtxmath}
 \else
   \usepackage{fontspec}
   \setmainfont{Times New Roman}
+  \newfontfamily\arialfont{Arial}
 \fi
 
 \pagestyle{fancy}
@@ -27,20 +29,35 @@ $endif$
 
 \makeatletter
 \renewcommand{\maketitle}{
+
+  % Page 1
+
   \newgeometry{left=2.5cm,right=1.75cm,top=1.6cm,bottom=2.5cm,head=0.95cm,foot=1.72cm}
   \begin{titlepage}
   \thispagestyle{empty}
   \noindent
-  \begin{minipage}[t]{0.23\textwidth}
-    {\raggedright\bfseries\fontsize{24}{27}\selectfont UNITED\\NATIONS}
-  \end{minipage}
-  \hfill
-  \begin{minipage}[t]{0.73\textwidth}
-    \IfFileExists{logos/un.png}{\includegraphics[width=\linewidth,height=2.20cm,keepaspectratio]{logos/un.png}}{}
-  \end{minipage}\par
-  \vspace{0.20cm}
-  \noindent\rule{\textwidth}{0.5pt}\par
-  \vspace{0.14cm}
+  
+% UN line
+  
+\noindent
+\raisebox{-0.48\height}{%
+  \parbox[b]{0.25\textwidth}{%
+    \raggedright
+    {\arialfont\bfseries\fontsize{25pt}{25pt}\selectfont
+    UNITED\\NATIONS}%
+  }%
+}%
+\hfill
+\raisebox{-0.50\height}{%
+  \includegraphics[height=1.60cm]{logos/un.png}%
+}\par
+
+\vspace{0.20cm}
+\noindent\rule{\textwidth}{0.5pt}\par
+\vspace{0.14cm}
+  
+%  ipbes logo
+
   \noindent
   \begin{minipage}[c]{0.30\textwidth}
     \IfFileExists{logos/ipbes.png}{\includegraphics[width=\linewidth,height=2.20cm,keepaspectratio]{logos/ipbes.png}}{}
@@ -66,14 +83,19 @@ $endif$
   \end{center}
   \end{titlepage}
 
+% Page 2
+
   \clearpage
   \thispagestyle{fancy}
-  \vspace*{5.1cm}
-  \noindent{\fontsize{12}{14}\selectfont\bfseries DOI: $if(doi)$$doi$$else$\textbf{Will be inserted upon release}$endif$}
 
-  \vfill
+  \vspace*{\fill}
+  
+  \noindent{\fontsize{12}{14}\selectfont\bfseries DOI: $if(doi)$$doi$$else$\textbf{Will be inserted upon release}$endif$}
+  \vspace{0.30cm}
+
   {\fontsize{12}{14}\selectfont $if(title)$$title$$else$This document$endif$ is a product of the IPBES task force on knowledge and data.\par}
   \vspace{0.30cm}
+
   {\fontsize{12}{14}\selectfont Editors:\par}
   $if(editors)$
   {\fontsize{12}{14}\selectfont $for(editors)$$editors.name$$sep$, $endfor$\par}
@@ -81,11 +103,16 @@ $endif$
   {\fontsize{12}{14}\selectfont \textbf{editors missing in yaml frontmatter of IPBES_Data_Vision.qmd} \par}
   $endif$
   \vspace{0.30cm}
+
   {\fontsize{12}{14}\selectfont Suggested citation:\par}
   {\fontsize{12}{14}\selectfont IPBES ($if(release_date)$$release_date$$else$YYYY-MM-DD$endif$): $if(title)$$title$$else$IPBES Long-term Vision on Data and Knowledge Management$endif$ ver. $if(version)$$version$$else$1.0$endif$, $if(editors)$$for(editors)$$editors.name$$sep$, $endfor$ (eds.)$else$Editors TBD$endif$. IPBES secretariat, Bonn, Germany. DOI: $if(doi)$$doi$$else$\textbf{Will be inserted upon release}$endif$\par}
   \vspace{0.30cm}
-  {\fontsize{12}{14}\selectfont To get the latest version of the vision visit $if(concept_doi)$https://doi.org/$concept_doi$$elseif(doi)$https://doi.org/$doi$$else$\textbf{Will be inserted upon release}$endif$\par}
-  {\fontsize{12}{14}\selectfont Inquiries should be directed to $if(contact_email)$$contact_email$$else$tsu.data@ipbes.net$endif$\par}
+
+  \noindent{\fontsize{12}{14}\selectfont\bfseries
+  DOI: $if(doi)$\href{https://doi.org/$doi$}{$doi$}$else$\textbf{Will be inserted upon release}$endif$}
+
+  {\fontsize{12}{14}\selectfont
+  Inquiries should be directed to $if(contact_email)$\href{mailto:$contact_email$}{$contact_email$}$else$\href{mailto:tsu.data@ipbes.net}{tsu.data@ipbes.net}$endif$\par}
   \restoregeometry
   \clearpage
 }
