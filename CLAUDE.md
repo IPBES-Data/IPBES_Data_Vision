@@ -12,6 +12,7 @@ make clean
 python3 scripts/release.py prepare --prerelease --notes "a; b"   # next release candidate build, no Zenodo
 python3 scripts/versions.py status   # current version state from the tags
 python3 scripts/test_versions.py     # checks the version rules (also run by CI)
+python3 scripts/check_setup.py       # setup check (secrets/variables in env); the panel's Check setup button runs it
 ```
 
 CI (`pr-check.yml`) runs `test_versions.py` and checks that `release.py build` renders. `release.py prepare` without `--prerelease`, `release.py publish` and everything in `scripts/gdoc.py` except local conversion talk to Zenodo or Google; never run them against production Zenodo (`ZENODO_TARGET=production`) without being asked.

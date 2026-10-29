@@ -43,6 +43,8 @@ execute:
 
 <p class="hint">ℹ️ A button opens the task on GitHub (sign in if asked). There, click <b>Run workflow</b> on the right, fill in the form and click the green <b>Run workflow</b> button. Nothing happens until you do. Hover over a button for details.</p>
 
+<p class="setup"><a class="btn-small" data-workflow="check-setup.yml" title="Checks that the Google sign-in, the Zenodo tokens, the variables and the GitHub settings are in place, and lists anything to fix. Read-only: changes nothing. Form: nothing to fill in.">Check setup</a> <span class="status" data-status="check-setup.yml"></span> &middot; <a href="#setup">Setup how-to</a></p>
+
 <div id="waiting"></div>
 
 <p class="links"><a href="../">Website</a> · <a href="../preview/">Pre-release preview</a> · <a href="../older-releases.html">All releases</a> · <a data-href="/releases">GitHub releases</a> · <a data-href="/pulls">Changes waiting for review</a> · <a href="https://zenodo.org/me/uploads">Zenodo</a> · <a href="https://sandbox.zenodo.org/me/uploads">Zenodo sandbox</a></p>
@@ -65,6 +67,10 @@ execute:
 #panel .card p.status { color: #555; font-size: 0.85rem; }
 #panel .waiting { background: #fff6d6; border-radius: 6px; padding: 0.5rem 0.75rem; margin: 0 0 0.5rem; }
 #panel .links { font-size: 0.9rem; }
+#panel .setup { font-size: 0.9rem; }
+#panel .btn-small { border: 1px solid #1f6f43; border-radius: 6px; color: #1f6f43; padding: 0.2rem 0.7rem; text-decoration: none; }
+#panel .btn-small:hover { background: #e8f2ec; }
+#panel .setup .status { color: #555; margin-left: 0.5rem; }
 #panel .versions { margin: 0.25rem 0 0; }
 #panel .copy { font-size: 0.85rem; padding: 0 0.5rem; border: 1px solid #1f6f43; border-radius: 4px; background: #fff;
                color: #1f6f43; cursor: pointer; }
@@ -83,7 +89,7 @@ execute:
 
   document.querySelectorAll("[data-workflow]").forEach((a) => { a.href = `${gh}/actions/workflows/${a.dataset.workflow}`; });
   document.querySelectorAll("[data-href]").forEach((a) => { a.href = gh + a.dataset.href; });
-  document.querySelectorAll("#panel a").forEach((a) => { a.target = "_blank"; a.rel = "noopener noreferrer"; });
+  document.querySelectorAll('#panel a:not([href^="#"])').forEach((a) => { a.target = "_blank"; a.rel = "noopener noreferrer"; });
 
   // Last run of each task.
   document.querySelectorAll("[data-status]").forEach(async (p) => {
@@ -138,7 +144,7 @@ execute:
 </script>
 ```
 
-You need to be signed in to GitHub with an account that may edit this repository. Each task takes a few minutes; its status appears above (reload the page).
+**Check setup** (below the buttons) checks the secrets, variables and the Google, Zenodo and GitHub settings and lists anything to fix in the run's details; it changes nothing. You need to be signed in to GitHub with an account that may edit this repository. Each task takes a few minutes; its status appears above (reload the page).
 
 ## What the buttons do
 
@@ -245,43 +251,114 @@ If the draft is wrong instead: delete the draft on Zenodo and the release and it
 
 After 2.0 is published, the next export offers **2.1** (minor) or **3.0** (major). Accepted edits then count as **2.1-beta.1**, **2.1-beta.2**, …, the first pre-release becomes **2.1-rc.1**, and its release **2.1**. Beta and release-candidate numbers always start again at 1 for each new version.
 
-## One-time setup (for the technical admin)
+## Admin how-to: setting everything up {#setup}
 
-### GitHub
+This is the complete setup, in order. Most of it is done once; the *Maintenance* part lists what recurs. When you are done — and whenever something does not work — click **Check setup** on the panel: its run's *details* list every item as ✅ / ⚠️ / ❌ with what to fix.
 
-*Settings → Actions → General*: under *Workflow permissions* tick **Allow GitHub Actions to create and approve pull requests** (needed by the import). GitHub Pages must serve the `gh-pages` branch.
+**You need**
 
-*Settings → Secrets and variables → Actions*:
+- a GitHub account with *Admin* rights on this repository;
+- the Zenodo accounts (sandbox and production) that own the Vision's records;
+- a Google account that will own the exported Docs (a free account is fine; `IPBES.Vision@krugs.de` at the moment);
+- for one step (the Google sign-in), a computer with Python 3 and the [GitHub CLI](https://cli.github.com/) signed in (`gh auth login`), in a copy of this repository.
 
-| Name | Kind | Value |
-|---|---|---|
-| `ZENODO_TARGET` | variable | `sandbox` (tests) or `production` (real DOIs) |
-| `ZENODO_SANDBOX_TOKEN` | secret | sandbox.zenodo.org token with `deposit:write` and `deposit:actions` |
-| `ZENODO_TOKEN` | secret | zenodo.org token with `deposit:write` and `deposit:actions` |
-| `GOOGLE_OAUTH` | secret | Google sign-in, created by `scripts/gdoc.py login` (see below) |
-| `GDOC_ID` | variable | link or ID of the usual Google Doc to import from |
-| `GDRIVE_FOLDER_ID` | variable | optional: link or ID of the Drive folder for exports (default: My Drive) |
+### 1. GitHub settings
 
-People who use the panel need *Write* access to the repository.
+1. *Settings → Pages*: *Deploy from a branch*, branch **`gh-pages`**, folder `/ (root)`.
+2. *Settings → Actions → General → Workflow permissions*: tick **Allow GitHub Actions to create and approve pull requests** (the import opens its review page this way).
+3. *Settings → General → Pull Requests*: **Allow auto-merge** (optional; lets a pull request merge itself once its check passes).
+4. *Settings → Branches*: `main` requires the status check **`build`** ("Check website and PDF build"), so nothing broken reaches the website.
+5. *Settings → Collaborators*: everyone who uses the panel needs **Write** access.
 
-### Google (works with a free Google account)
+### 2. Zenodo
 
-Import and export act as **one Google account** (yours, or a dedicated one): they can read every Doc that account can open, and exports are new Docs owned by it, using its normal Drive storage. Set up once, on a computer with Python:
+Zenodo has two separate systems: **sandbox** (sandbox.zenodo.org, for tests, DOIs `10.5072/…`) and **production** (zenodo.org, real DOIs `10.5281/…`). Each needs:
 
-1. In the [Google Cloud console](https://console.cloud.google.com/), signed in with that account, create a project and enable the **Google Drive API** and the **Google Docs API** (the Docs API writes the "new version" and "imported" notices). No billing is needed.
-2. *Google Auth Platform → Branding* (German: *Branding*): app name (e.g. "IPBES Vision"), support e-mail and developer contact e-mail, plus — required for publishing — **App home page** `https://ipbes-data.github.io/IPBES_Data_Vision/admin/`, **Privacy policy link** `https://ipbes-data.github.io/IPBES_Data_Vision/admin/#privacy` and **Authorized domain** `ipbes-data.github.io`; save. Then *Audience* (*Zielgruppe*): user type **External**, then **Publish app** (*App veröffentlichen*); the status must read "In production" (*In Produktion*). In "Testing" status only listed test users can sign in, and Google ends the sign-in after 7 days.
-3. *Clients → Create client*, type **Desktop app**; download the JSON file (e.g. `client.json`).
-4. In this repository run, with the [GitHub CLI](https://cli.github.com/) signed in:
+1. **A first record, published by hand**, whose *concept DOI* ("all versions" DOI) goes into the frontmatter of `IPBES_Data_Vision.qmd`: `zenodo.concept_doi` (production; now `10.5281/zenodo.5513473`, version 1.0) and `zenodo.sandbox_concept_doi` (now `10.5072/zenodo.472195`). Releases create new versions of these records.
+2. **A personal access token of the account that owns that record**: Zenodo → your name (top right) → *Applications* → *Personal access tokens* → *New token*, scopes **`deposit:write`** and **`deposit:actions`**. The token is shown only once.
+3. **Store the tokens as secrets** (*Settings → Secrets and variables → Actions → New repository secret*, or on the command line, which asks for the value):
 
    ```bash
-   python3 scripts/gdoc.py login client.json | gh secret set GOOGLE_OAUTH
+   gh secret set ZENODO_TOKEN            # production token
+   gh secret set ZENODO_SANDBOX_TOKEN    # sandbox token
    ```
 
-   A browser opens; sign in with the Google account. Google warns that the app is not verified: choose *Advanced → Go to IPBES Vision sync* (it is your own app) and allow access to Google Drive. Then delete `client.json`.
+4. **Choose the target** with the variable `ZENODO_TARGET`: `sandbox` while testing (releases become test releases `2.0-test.N`, the website is never changed), `production` for real DOIs:
 
-If an import or export later fails with "sign-in has expired or was revoked" (e.g. after removing the app's access in the Google account, or after 6 months without use), repeat step 4.
+   ```bash
+   gh variable set ZENODO_TARGET --body sandbox    # or: production
+   ```
 
-### How the Google Doc must be laid out
+The access right and licence of new versions are in the frontmatter (`zenodo.access_right`, now `closed`; `zenodo.license`, `cc-by-4.0`, applied once access is open).
+
+### 3. Google (free account is fine)
+
+Import and export act as one Google account. They read any Doc that account can open; exports are new Docs owned by it. Signed in to the [Google Cloud console](https://console.cloud.google.com/) with that account (German labels in brackets):
+
+1. **Project**: create one (e.g. "IPBES Vision"). No billing is needed.
+2. **APIs** (*APIs & Services → Library*): enable **Google Drive API** and **Google Docs API** (*Aktivieren*). The Docs API writes the "NEW VERSION" / "IMPORTED" notices; without it, everything else still works.
+3. **Branding** (*Google Auth Platform → Branding*): app name ("IPBES Vision"), support e-mail, developer contact e-mail, and — required before publishing — **App home page** `https://ipbes-data.github.io/IPBES_Data_Vision/admin/`, **Privacy policy link** `https://ipbes-data.github.io/IPBES_Data_Vision/admin/#privacy`, **Authorized domain** `ipbes-data.github.io`. Save (*Speichern*).
+4. **Audience** (*Zielgruppe*): user type **External**, then **Publish app** (*App veröffentlichen*) → the status must read **In production** (*In Produktion*). In *Testing* only listed test users can sign in and Google ends the sign-in after 7 days.
+5. **Client** (*Clients → Create client*): type **Desktop app**; download its JSON file (`client_secret_….json`). Keep it somewhere safe: it is needed again to renew the sign-in (or download it again from *Clients*).
+6. **Sign in once**, in a copy of this repository:
+
+   ```bash
+   python3 scripts/gdoc.py login ~/Downloads/client_secret_….json | gh secret set GOOGLE_OAUTH
+   ```
+
+   A browser opens: choose the Google account; on "Google hasn't verified this app" (*Google hat diese App nicht überprüft*) click *Advanced → Go to IPBES Vision (unsafe)* (*Erweitert → Zu IPBES Vision wechseln*) — it is your own app — and allow Google Drive access. The browser then says "Signed in", the terminal "✓ Set Actions secret GOOGLE_OAUTH".
+
+### 4. Optional variables
+
+| Variable | Use |
+|---|---|
+| `GDRIVE_FOLDER_ID` | Drive folder (link or ID) for new exports; default *My Drive*. Superseded exports move into a folder `archive` next to them. |
+| `GDOC_ID` | Doc (link or ID) to import when the import form is empty; normally not needed, because the latest exported Doc is used. |
+
+### 5. Check and first run
+
+1. **Check setup** on the panel; fix every ❌ (⚠️ are hints, e.g. "sandbox").
+2. **Export to Google Doc** once (Target version e.g. `2.0`), then **Import from Google Doc** without editing: it should report "No changes", which confirms the round trip through Google.
+3. Optional full test on the sandbox: with `ZENODO_TARGET=sandbox` make a pre-release, a release (`…-test.1`) and publish it; check it on sandbox.zenodo.org. Then set `ZENODO_TARGET` to `production`.
+
+### Troubleshooting
+
+| Message | Cause and fix |
+|---|---|
+| "Google Drive API has not been used in project … or it is disabled" | Enable the Drive API (step 3.2), wait a few minutes. |
+| "Google Docs API has not been used …" (warning) | Enable the Docs API (step 3.2); exports still worked, but without notice on the old Doc. |
+| At sign-in: "Access blocked … has not completed the Google verification process", *Error 403: access_denied* | The app is still in *Testing*: publish it (step 3.4). |
+| *Publish app* is greyed out | Branding is incomplete: home page, privacy link and authorized domain (step 3.3). |
+| "The Google sign-in has expired or was revoked" / `invalid_grant` | Repeat step 3.6 (happens after 6 months without use, a password-related revocation, or removing the app's access in the Google account). |
+| Import: "The front matter of the Google Doc needs fixing" | Fix the listed rows in the Doc's tables (see *How the Google Doc must be laid out*) and import again. |
+| Release: "There is no release candidate …", "The text has changed since …", "Nothing has changed since …" | The version rules at work: make a pre-release first, or a new one. |
+| "The version must be 2.1 (minor change) or 3.0 (major change)" | Only the next minor or major is allowed as Target version. |
+| Check setup: "Token accepted, but its account does not own …" | The Zenodo token belongs to another account than the record: create it in the owning account. |
+| A pull request stays open although its check is green | Auto-merge sometimes does not fire: click *Merge* on the pull request. |
+| *All versions* shows "HTTP 403" under pre-releases | GitHub's limit of 60 requests per hour per visitor; it clears within the hour. |
+
+### Maintenance
+
+- **Before the real release**: `ZENODO_TARGET` → `production`.
+- **Zenodo tokens**: when replaced or revoked, create a new one (step 2.2) and store it again (step 2.3).
+- **Google sign-in**: renew with step 3.6 when import/export report it expired.
+- **People**: give new admins *Write* access (step 1.5).
+- **No longer used** (can be deleted): the variables `ZENODO_API_BASE` and `ZENODO_SANDBOX_API_BASE`.
+
+### Without the panel (command line)
+
+```bash
+make preview                                                      # live preview while editing
+make build                                                        # website + PDF as unreleased draft
+make admin                                                        # this panel → _site/admin/index.html
+python3 scripts/release.py prepare --prerelease --notes "a; b"    # pre-release build (no Zenodo)
+python3 scripts/versions.py status                                # current versions
+python3 scripts/check_setup.py                                    # setup check (needs the secrets in the environment)
+export GOOGLE_OAUTH="$(python3 scripts/gdoc.py login client.json)"   # sign in for this shell
+python3 scripts/gdoc.py import <doc link>
+```
+
+## How the Google Doc must be laid out
 
 Everything before the first heading is the front matter; the text of the Vision starts at the first **Heading 1**.
 
@@ -294,20 +371,6 @@ Everything before the first heading is the front matter; the text of the Vision 
 If a table is missing or a value is invalid, the import stops without changing anything and lists what to fix (shown under the failed run's *details*).
 
 An export writes exactly this layout, so the easiest start is to run **Export to Google Doc** once and edit the new Doc.
-
-### Zenodo
-
-`ZENODO_TARGET` selects the Zenodo used by releases. The concept DOIs ("all versions" DOI) are in the frontmatter of `IPBES_Data_Vision.qmd` (`zenodo.concept_doi`, `zenodo.sandbox_concept_doi`). Sandbox releases never change the official website. If a prepared release is wrong, delete the draft on Zenodo and the release and its tag on GitHub, then make it again.
-
-### Without the panel
-
-```bash
-make preview                                                    # live preview while editing
-make build                                                      # website + PDF as unreleased draft
-python3 scripts/release.py prepare --version 1.2 --prerelease   # pre-release build, no Zenodo
-export GOOGLE_OAUTH="$(python3 scripts/gdoc.py login client.json)"   # sign in once per shell
-python3 scripts/gdoc.py import <doc link>
-```
 
 ## Privacy: Google sign-in "IPBES Vision" {#privacy}
 
