@@ -30,7 +30,7 @@ flowchart TD
 | Build | Version shown | DOI | Where it goes |
 |---|---|---|---|
 | Local / PR check | `1.2-draft` | "Will be inserted upon release" | `_site/`, PR artifact |
-| Pre-release `v1.2-rc.1` | `1.2-rc.1` | None (pre-release) | GitHub pre-release assets, `/preview/` on the site |
+| Pre-release `v1.2-rc.1` | `1.2-rc.1` | None (pre-release) | GitHub pre-release assets (the archive), `/preview/` on the site |
 | Release `v1.2` | `1.2` | Reserved Zenodo DOI | Zenodo draft, GitHub release assets; site after publishing |
 
 ## Editing
@@ -44,7 +44,9 @@ flowchart TD
 1. On GitHub, *Releases → Draft a new release*.
 2. Tag: `v<version>-<suffix>`, e.g. `v1.2-rc.1`, where `<version>` is the `version` in the frontmatter.
 3. Tick **Set as a pre-release** and publish.
-4. The *Release* workflow attaches the PDF to the pre-release and deploys the site to <https://ipbes-data.github.io/IPBES_Data_Vision/preview/>. Zenodo is not contacted.
+4. The *Release* workflow attaches the PDF and the built site to the pre-release and deploys the site to <https://ipbes-data.github.io/IPBES_Data_Vision/preview/>. Zenodo is not contacted.
+
+Pre-releases are archived only as GitHub pre-releases: their PDFs are listed under *Pre-releases* on the All Releases page, marked as having no DOI. Deleting a GitHub pre-release removes it from the archive.
 
 ## Release (with DOI)
 

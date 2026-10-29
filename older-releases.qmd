@@ -13,46 +13,69 @@ concept_doi <- rmarkdown::yaml_front_matter("IPBES_Data_Vision.qmd")$zenodo$conc
 
 <p><a href="index.html">Vision</a> | <a href="older-releases.html">All Releases</a> | <a href="assets/IPBES-Data-Management-Vision-latest.pdf" target="_blank" rel="noopener noreferrer">Latest PDF</a></p>
 
-## All Releases
+## Releases
 
-All published versions, read live from Zenodo. Concept DOI (always the latest version): [`r concept_doi`](https://doi.org/`r concept_doi`)
+Citable versions with a DOI, read live from Zenodo. Concept DOI (always the latest version): [`r concept_doi`](https://doi.org/`r concept_doi`)
 
 ```{r, results='asis'}
-cat(sprintf('<div id="all-releases" data-concept-doi="%s"><p>Loading releases from Zenodo&hellip;</p></div>', concept_doi))
+cat(sprintf('<div id="releases" data-concept-doi="%s"><p>Loading releases from Zenodo&hellip;</p></div>', concept_doi))
 ```
+
+## Pre-releases
+
+Drafts for review, archived on GitHub. **Pre-releases have no DOI and are not for citation.**
+
+<div id="pre-releases" data-repo="IPBES-Data/IPBES_Data_Vision"><p>Loading pre-releases from GitHub&hellip;</p></div>
 
 ```{=html}
 <style>
-#all-releases table { width: 100%; border-collapse: collapse; margin-top: 0.75rem; }
-#all-releases th { text-align: left; padding: 0.55rem 1rem 0.55rem 0; border-bottom: 2px solid #d7dee6; }
-#all-releases td { padding: 0.6rem 1rem 0.6rem 0; border-bottom: 1px solid #e7ebef; white-space: nowrap; }
+#releases table, #pre-releases table { width: 100%; border-collapse: collapse; margin-top: 0.75rem; }
+#releases th, #pre-releases th { text-align: left; padding: 0.55rem 1rem 0.55rem 0; border-bottom: 2px solid #d7dee6; }
+#releases td, #pre-releases td { padding: 0.6rem 1rem 0.6rem 0; border-bottom: 1px solid #e7ebef; white-space: nowrap; }
 </style>
 <script>
-(async () => {
-  const box = document.getElementById("all-releases");
-  const conceptDoi = box.dataset.conceptDoi;
-  const conceptId = conceptDoi.match(/(\d+)$/)[1];
+(() => {
   const link = (href, text) => `<a href="${href}" target="_blank" rel="noopener noreferrer">${text}</a>`;
-  try {
-    // ponytail: one page of 25 (Zenodo's anonymous maximum); add paging past 25 versions.
-    const response = await fetch(
-      `https://zenodo.org/api/records?q=conceptrecid:${conceptId}&all_versions=true&sort=mostrecent&size=25`
-    );
-    if (!response.ok) throw new Error(`Zenodo returned HTTP ${response.status}`);
-    const records = (await response.json()).hits.hits;
-    if (!records.length) throw new Error("no published versions yet");
-    const rows = records.map((r) => {
+
+  // Fill box with a table built from fetch(url) → rows; on failure show fallback(message).
+  const fill = async (box, url, toRows, header, fallback) => {
+    try {
+      const response = await fetch(url);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const rows = toRows(await response.json());
+      if (!rows.length) throw new Error("none published yet");
+      box.innerHTML = `<table><thead><tr>${header.map((h) => `<th>${h}</th>`).join("")}</tr></thead>` +
+        `<tbody>${rows.map((r) => `<tr>${r.map((c) => `<td>${c}</td>`).join("")}</tr>`).join("")}</tbody></table>`;
+    } catch (error) {
+      box.innerHTML = fallback(error.message);
+    }
+  };
+
+  const releases = document.getElementById("releases");
+  const conceptDoi = releases.dataset.conceptDoi;
+  // ponytail: one page of 25 (Zenodo's anonymous maximum); add paging past 25 versions.
+  fill(releases,
+    `https://zenodo.org/api/records?q=conceptrecid:${conceptDoi.match(/(\d+)$/)[1]}&all_versions=true&sort=mostrecent&size=25`,
+    (json) => json.hits.hits.map((r) => {
       const pdf = (r.files || []).find((f) => /\.pdf$/i.test(f.key));
-      return `<tr><td>${r.metadata.version || "-"}</td><td>${r.metadata.publication_date}</td>` +
-        `<td>${link(`https://doi.org/${r.doi}`, r.doi)}</td>` +
-        `<td>${pdf ? link(pdf.links.self, "PDF") : "-"}</td><td>${link(r.links.self_html, "Record")}</td></tr>`;
-    });
-    box.innerHTML = "<table><thead><tr><th>Version</th><th>Release date</th><th>DOI</th>" +
-      `<th>Download</th><th>Zenodo</th></tr></thead><tbody>${rows.join("")}</tbody></table>`;
-  } catch (error) {
-    box.innerHTML = `<p>Could not load the release list (${error.message}). ` +
-      `See all versions on Zenodo: ${link(`https://doi.org/${conceptDoi}`, conceptDoi)}</p>`;
-  }
+      return [r.metadata.version || "-", r.metadata.publication_date, link(`https://doi.org/${r.doi}`, r.doi),
+              pdf ? link(pdf.links.self, "PDF") : "-", link(r.links.self_html, "Record")];
+    }),
+    ["Version", "Release date", "DOI", "Download", "Zenodo"],
+    (msg) => `<p>Could not load releases (${msg}). See all versions on Zenodo: ` +
+      `${link(`https://doi.org/${conceptDoi}`, conceptDoi)}</p>`);
+
+  const pre = document.getElementById("pre-releases");
+  const repo = pre.dataset.repo;
+  fill(pre,
+    `https://api.github.com/repos/${repo}/releases?per_page=100`,
+    (list) => list.filter((r) => r.prerelease && !r.draft).map((r) => {
+      const pdf = r.assets.find((a) => /\.pdf$/i.test(a.name));
+      return [r.tag_name.replace(/^v/, ""), (r.published_at || "").slice(0, 10),
+              pdf ? link(pdf.browser_download_url, "PDF") : "-", link(r.html_url, "GitHub")];
+    }),
+    ["Version", "Date", "Download", "Release notes"],
+    (msg) => `<p>No pre-releases listed (${msg}). See ${link(`https://github.com/${repo}/releases`, "GitHub releases")}.</p>`);
 })();
 </script>
 ```

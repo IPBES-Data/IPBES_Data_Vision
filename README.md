@@ -22,7 +22,7 @@ Requirements: R (`rmarkdown`, `knitr`), Quarto, TinyTeX, Python 3.
 
 | GitHub release | Tag | Result |
 |---|---|---|
-| Pre-release | `v1.2-rc.1` | PDF attached to the pre-release, site at `/preview/`, no DOI |
+| Pre-release | `v1.2-rc.1` | PDF attached to the pre-release (archived there and listed on the All Releases page), site at `/preview/`, no DOI |
 | Release | `v1.2` (must equal `v` + frontmatter `version`) | DOI reserved, Zenodo draft filled, PDF attached |
 | *Publish release* workflow | `v1.2` | Zenodo draft published (DOI minted), site deployed |
 
