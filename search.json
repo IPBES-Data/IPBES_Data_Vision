@@ -1,31 +1,17 @@
 [
   {
-    "objectID": "older-releases.html",
-    "href": "older-releases.html",
-    "title": "All versions",
+    "objectID": "v1.0.html",
+    "href": "v1.0.html",
+    "title": "IPBES Long-term Vision on Data and Knowledge Management",
     "section": "",
-    "text": "Citable versions with a DOI, read live from Zenodo. Concept DOI (always the latest version): 10.5281/zenodo.5513473\n\n\nLoading releases from Zenodo…"
-  },
-  {
-    "objectID": "older-releases.html#releases",
-    "href": "older-releases.html#releases",
-    "title": "All versions",
-    "section": "",
-    "text": "Citable versions with a DOI, read live from Zenodo. Concept DOI (always the latest version): 10.5281/zenodo.5513473\n\n\nLoading releases from Zenodo…"
-  },
-  {
-    "objectID": "older-releases.html#pre-releases",
-    "href": "older-releases.html#pre-releases",
-    "title": "All versions",
-    "section": "Pre-releases",
-    "text": "Pre-releases\nDrafts for review, archived on GitHub. Pre-releases have no DOI and are not for citation.\n\n\nLoading pre-releases from GitHub…"
+    "text": "Version 1.0 · published 25 April 2022 · cite it with DOI 10.5281/zenodo.5513474\n\n\nVersion1.0\nDate2022-04-25\nDOI10.5281/zenodo.5513474\nEditorsDebora Pignatari Drucker, David Thau, Rainer M. Krug, Joy A. Kumagai, Aidin Niamir\n\nHow to citeIPBES (2022): IPBES Long-term Vision on Data and Knowledge Management ver. 1.0, Drucker, D.P., Thau, D., Krug, R.M., Kumagai, J.A., and Niamir, A. (eds.). IPBES secretariat, Bonn, Germany. DOI: 10.5281/zenodo.5513474\n\n\n\nVersion 1.0 is the current released version of the IPBES long-term vision on data and knowledge management, prepared by the IPBES task force on knowledge and data. Its text is available from Zenodo.\n\n Version 1.0 on Zenodo\n\nVersion 2.0 is in preparation. Its latest pre-release, for review and not for citation, is at pre-release preview; all versions are listed under All versions."
   },
   {
     "objectID": "index.html",
     "href": "index.html",
     "title": "The IPBES long-term vision of data and knowledge management",
     "section": "",
-    "text": "Pre-release 2.0-rc.2 · for review, not for citation · the current released version is version 1.0"
+    "text": "Pre-release 2.0-rc.1 · for review, not for citation · the current released version is version 1.0"
   },
   {
     "objectID": "index.html#introduction",
@@ -88,13 +74,27 @@
     "href": "index.html#suggested-citation",
     "title": "The IPBES long-term vision of data and knowledge management",
     "section": "9 Suggested Citation",
-    "text": "9 Suggested Citation\nIPBES (2026): The IPBES long-term vision of data and knowledge management, version 2.0-rc.2, Rainer M Krug, Aidin Niamir (eds.). IPBES secretariat, Bonn, Germany. DOI: None (pre-release)"
+    "text": "9 Suggested Citation\nIPBES (2026): The IPBES long-term vision of data and knowledge management, version 2.0-rc.1, Rainer M Krug, Aidin Niamir (eds.). IPBES secretariat, Bonn, Germany. DOI: None (pre-release)"
   },
   {
-    "objectID": "v1.0.html",
-    "href": "v1.0.html",
-    "title": "IPBES Long-term Vision on Data and Knowledge Management",
+    "objectID": "older-releases.html",
+    "href": "older-releases.html",
+    "title": "All versions",
     "section": "",
-    "text": "Version 1.0 · published 25 April 2022 · cite it with DOI 10.5281/zenodo.5513474\n\n\nVersion1.0\nDate2022-04-25\nDOI10.5281/zenodo.5513474\nEditorsDebora Pignatari Drucker, David Thau, Rainer M. Krug, Joy A. Kumagai, Aidin Niamir\n\nHow to citeIPBES (2022): IPBES Long-term Vision on Data and Knowledge Management ver. 1.0, Drucker, D.P., Thau, D., Krug, R.M., Kumagai, J.A., and Niamir, A. (eds.). IPBES secretariat, Bonn, Germany. DOI: 10.5281/zenodo.5513474\n\n\n\nVersion 1.0 is the current released version of the IPBES long-term vision on data and knowledge management, prepared by the IPBES task force on knowledge and data. Its text is available from Zenodo.\n\n Version 1.0 on Zenodo\n\nVersion 2.0 is in preparation. Its latest pre-release, for review and not for citation, is at pre-release preview; all versions are listed under All versions."
+    "text": "Citable versions with a DOI, read live from Zenodo. Concept DOI (always the latest version): 10.5281/zenodo.5513473\n\n\nLoading releases from Zenodo…"
+  },
+  {
+    "objectID": "older-releases.html#releases",
+    "href": "older-releases.html#releases",
+    "title": "All versions",
+    "section": "",
+    "text": "Citable versions with a DOI, read live from Zenodo. Concept DOI (always the latest version): 10.5281/zenodo.5513473\n\n\nLoading releases from Zenodo…"
+  },
+  {
+    "objectID": "older-releases.html#pre-releases",
+    "href": "older-releases.html#pre-releases",
+    "title": "All versions",
+    "section": "Pre-releases",
+    "text": "Pre-releases\nDrafts for review, archived on GitHub. Pre-releases have no DOI and are not for citation.\n\n\nLoading pre-releases from GitHub…"
   }
 ]

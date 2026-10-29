@@ -86,8 +86,8 @@ ul.task-list li input[type="checkbox"] {
       <div class="navbar-container container-fluid">
       <div class="navbar-brand-container mx-auto">
     <a href="./index.html" class="navbar-brand navbar-brand-logo">
-    <img src="./logos/ipbes.png" alt="IPBES" class="navbar-logo light-content">
-    <img src="./logos/ipbes.png" alt="IPBES" class="navbar-logo dark-content">
+    <img src="./logos/ipbes-data.jpg" alt="IPBES-Data" class="navbar-logo light-content">
+    <img src="./logos/ipbes-data.jpg" alt="IPBES-Data" class="navbar-logo dark-content">
     </a>
     <a class="navbar-brand" href="./index.html">
     <span class="navbar-title">IPBES Data Management Vision</span>
@@ -100,7 +100,7 @@ ul.task-list li input[type="checkbox"] {
           <div class="collapse navbar-collapse" id="navbarCollapse">
             <ul class="navbar-nav navbar-nav-scroll ms-auto">
   <li class="nav-item">
-    <a class="nav-link" href="./index.html"> <i class="bi bi-book" role="img">
+    <a class="nav-link" href="https://ipbes-data.github.io/IPBES_Data_Vision/"> <i class="bi bi-book" role="img">
 </i> 
 <span class="menu-text">The Vision</span></a>
   </li>  
@@ -108,6 +108,11 @@ ul.task-list li input[type="checkbox"] {
     <a class="nav-link active" href="./older-releases.html" aria-current="page"> <i class="bi bi-clock-history" role="img">
 </i> 
 <span class="menu-text">All versions</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="https://ipbes-data.github.io/IPBES_Data_Vision/preview/"> <i class="bi bi-eye" role="img">
+</i> 
+<span class="menu-text">Pre-release</span></a>
   </li>  
   <li class="nav-item">
     <a class="nav-link" href="./assets/IPBES-Data-Management-Vision-latest.pdf" target="_blank"> <i class="bi bi-download" role="img">
@@ -221,9 +226,15 @@ Loading pre-releases from GitHub…
 
 </main> <!-- /main -->
 <script>
-// Hide the header's "Download PDF" button where this site has no PDF (e.g. the main site before 2.0).
-document.querySelectorAll('a[href$="IPBES-Data-Management-Vision-latest.pdf"]').forEach((a) =>
-  fetch(a.href, { method: "HEAD" }).then((r) => { if (!r.ok) a.closest("li").style.display = "none"; }).catch(() => {}));
+// Hide header buttons whose target does not exist on this site: the PDF (e.g. the main site before 2.0) and the
+// pre-release preview (none since the last release). Mark the pre-release button active on the preview itself.
+const hideIfMissing = (selector, page = "") => document.querySelectorAll(selector).forEach((a) =>
+  fetch(a.href + page, { method: "HEAD" }).then((r) => { if (!r.ok) a.closest("li").style.display = "none"; })
+    .catch(() => {}));
+hideIfMissing('a[href$="IPBES-Data-Management-Vision-latest.pdf"]');
+hideIfMissing('a[href$="/preview/"]', "index.html");
+if (location.pathname.includes("/preview/"))
+  document.querySelectorAll('a[href$="/preview/"]').forEach((a) => a.classList.add("active"));
 </script>
 <script id="quarto-html-after-body" type="application/javascript">
   window.document.addEventListener("DOMContentLoaded", function (event) {
