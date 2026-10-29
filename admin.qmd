@@ -265,7 +265,7 @@ This is the complete setup, in order. Most of it is done once; the *Maintenance*
 ### 1. GitHub settings
 
 1. *Settings → Pages*: *Deploy from a branch*, branch **`gh-pages`**, folder `/ (root)`.
-2. *Settings → Actions → General → Workflow permissions*: tick **Allow GitHub Actions to create and approve pull requests** (the import opens its review page this way).
+2. *Settings → Actions → General → Workflow permissions*: tick **Allow GitHub Actions to create and approve pull requests** (the import opens its review page this way). This is only possible once an owner of the IPBES-Data organisation has allowed it for the organisation: <https://github.com/organizations/IPBES-Data/settings/actions> → *Workflow permissions* → same box → *Save*.
 3. *Settings → General → Pull Requests*: **Allow auto-merge** (optional; lets a pull request merge itself once its check passes).
 4. *Settings → Branches*: `main` requires the status check **`build`** ("Check website and PDF build"), so nothing broken reaches the website.
 5. *Settings → Collaborators*: everyone who uses the panel needs **Write** access.
@@ -334,6 +334,7 @@ Import and export act as one Google account. They read any Doc that account can 
 | Release: "There is no release candidate …", "The text has changed since …", "Nothing has changed since …" | The version rules at work: make a pre-release first, or a new one. |
 | "The version must be 2.1 (minor change) or 3.0 (major change)" | Only the next minor or major is allowed as Target version. |
 | Check setup: "Token accepted, but its account does not own …" | The Zenodo token belongs to another account than the record: create it in the owning account. |
+| Import: the review page is not opened; "GitHub Actions is not permitted to create or approve pull requests" | Step 1.2 (organisation setting first, then the repository's). |
 | A pull request stays open although its check is green | Auto-merge sometimes does not fire: click *Merge* on the pull request. |
 | *All versions* shows "HTTP 403" under pre-releases | GitHub's limit of 60 requests per hour per visitor; it clears within the hour. |
 
