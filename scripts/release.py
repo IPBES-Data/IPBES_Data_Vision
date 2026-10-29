@@ -55,7 +55,9 @@ def notes_markdown(notes: str) -> str:
 def render(meta: dict) -> Path:
     """Render the website and the PDF; meta goes to the templates (-M) and the R chunks (IPBES_*)."""
     meta = {key: meta.get(key, "") for key in
-            ("version", "release_date", "release_year", "doi", "prerelease", "release_notes")}
+            ("version", "release_date", "release_year", "doi", "prerelease", "release_notes",
+             "current_release")}
+    meta["current_release"] = meta["current_release"] or versions.fmt(versions.latest_release(versions.tags()))
     flags = [arg for key, value in meta.items() if value and key != "release_notes" for arg in ("-M", f"{key}={value}")]
     env = dict(os.environ, **{f"IPBES_{key.upper()}": value for key, value in meta.items()})
     pdf = BUILD / f"{PDF_PREFIX}-{'draft' if meta['version'] == 'draft' else 'v' + meta['version']}.pdf"

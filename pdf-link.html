@@ -1,0 +1,5 @@
+<script>
+// Hide the header's "Download PDF" button where this site has no PDF (e.g. the main site before 2.0).
+document.querySelectorAll('a[href$="IPBES-Data-Management-Vision-latest.pdf"]').forEach((a) =>
+  fetch(a.href, { method: "HEAD" }).then((r) => { if (!r.ok) a.closest("li").style.display = "none"; }).catch(() => {}));
+</script>

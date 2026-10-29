@@ -1,0 +1,35 @@
+---
+title: "IPBES Long-term Vision on Data and Knowledge Management"
+format:
+  html:
+    output-file: v1.0.html
+    toc: false
+---
+
+```{=html}
+<div class="status-banner status-release"><i class="bi bi-check-circle"></i><span><b>Version 1.0</b> &middot; published 25 April 2022 &middot; cite it with DOI <a href="https://doi.org/10.5281/zenodo.5513474">10.5281/zenodo.5513474</a></span></div>
+
+<div class="version-card"><div class="facts">
+<div><div class="label">Version</div>1.0</div>
+<div><div class="label">Date</div>2022-04-25</div>
+<div><div class="label">DOI</div><a href="https://doi.org/10.5281/zenodo.5513474">10.5281/zenodo.5513474</a></div>
+<div><div class="label">Editors</div>Debora Pignatari Drucker, David Thau, Rainer M. Krug, Joy A. Kumagai, Aidin Niamir</div>
+</div>
+<details><summary>How to cite</summary><p>IPBES (2022): <i>IPBES Long-term Vision on Data and Knowledge Management</i> ver. 1.0, Drucker, D.P., Thau, D., Krug, R.M., Kumagai, J.A., and Niamir, A. (eds.). IPBES secretariat, Bonn, Germany. DOI: <a href="https://doi.org/10.5281/zenodo.5513474">10.5281/zenodo.5513474</a></p></details>
+</div>
+<div class="vision-start"></div>
+
+<p>Version 1.0 is the current released version of the IPBES long-term vision on data and knowledge management, prepared by the IPBES task force on knowledge and data. Its text is available from Zenodo.</p>
+
+<p><a class="btn btn-success" href="https://doi.org/10.5281/zenodo.5513474"><i class="bi bi-box-arrow-up-right"></i> Version 1.0 on Zenodo</a></p>
+
+<p>Version 2.0 is in preparation. Its latest pre-release, for review and not for citation, is at <a href="preview/">pre-release preview</a>; all versions are listed under <a href="older-releases.html">All versions</a>.</p>
+
+<script>
+// The text of 1.0 is only on Zenodo, so the header's PDF button leads there on this page.
+document.querySelectorAll('a[href$="IPBES-Data-Management-Vision-latest.pdf"]').forEach((a) => {
+  a.href = "https://doi.org/10.5281/zenodo.5513474";
+  a.lastChild.textContent = " Version 1.0 on Zenodo";
+});
+</script>
+```
