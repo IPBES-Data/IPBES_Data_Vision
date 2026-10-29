@@ -217,3 +217,13 @@ python3 scripts/release.py prepare --version 1.2 --prerelease   # pre-release bu
 export GOOGLE_OAUTH="$(python3 scripts/gdoc.py login client.json)"   # sign in once per shell
 python3 scripts/gdoc.py import <doc link>
 ```
+
+## Privacy: Google sign-in "IPBES Vision" {#privacy}
+
+The Google sign-in "IPBES Vision" is used only by the automated tasks of this repository (*Import from Google Doc*, *Export to Google Doc*) to move the text of the IPBES Data Management Vision between this repository and Google Docs in the Google Drive of the account that signed in.
+
+- **What is accessed:** the import opens only the Google Doc it is given and reads its content; the export creates a new Google Doc. No other files are opened, changed or deleted.
+- **What is stored:** the imported text and bibliographic information are stored in this public repository, because they are the content of the Vision. Nothing else from Google, and no personal data of Google users, is stored, shared or sold.
+- **Where the sign-in is kept:** as an encrypted secret of this GitHub repository, used only by these tasks.
+- **Withdrawing access:** at any time at <https://myaccount.google.com/permissions> (remove "IPBES Vision"); import and export then stop working until someone signs in again.
+- **Contact:** IPBES.Vision@krugs.de
