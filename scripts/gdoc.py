@@ -219,9 +219,11 @@ def cmd_import(link: str) -> None:
 
 
 def cmd_export(folder: str = "", version: str = "") -> None:
-    """Upload the export as a new Google Doc (Drive converts the .docx)."""
+    """Upload the export as a new Google Doc (Drive converts the .docx); record it in build/latest-export.json."""
+    ts = versions.tags()
+    version = versions.fmt(versions.check(version, ts) if version.strip() else versions.target(ts))
     stamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
-    metadata = {"name": f"IPBES Data Management Vision - export {stamp}", "mimeType": GDOC}
+    metadata = {"name": f"IPBES Data Management Vision {version} - export {stamp}", "mimeType": GDOC}
     if folder:
         metadata["parents"] = [doc_id(folder.replace("/folders/", "/d/"))]
     boundary = "vision-export-boundary"
@@ -231,7 +233,11 @@ def cmd_export(folder: str = "", version: str = "") -> None:
     created = json.loads(call("POST", "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart"
                                       "&supportsAllDrives=true", body,
                               {"Authorization": f"Bearer {token}", "Content-Type": f"multipart/related; boundary={boundary}"}))
-    print(f"Created {metadata['name']!r}: https://docs.google.com/document/d/{created['id']}/edit")
+    record = {"name": metadata["name"], "url": f"https://docs.google.com/document/d/{created['id']}/edit",
+              "version": version, "created": stamp}
+    Path("build").mkdir(exist_ok=True)
+    Path("build/latest-export.json").write_text(json.dumps(record, indent=2) + "\n")
+    print(f"Created {record['name']!r}: {record['url']}")
 
 
 def cmd_login(client_file: str) -> None:
