@@ -1,0 +1,28 @@
+name: "Check setup"
+
+# Started from the admin panel. Checks secrets, variables, Google, Zenodo and GitHub settings;
+# read-only, changes nothing. The run summary lists each item as OK / warning / problem.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: read
+  actions: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: ${{ github.token }}
+      GOOGLE_OAUTH: ${{ secrets.GOOGLE_OAUTH }}
+      ZENODO_TOKEN: ${{ secrets.ZENODO_TOKEN }}
+      ZENODO_SANDBOX_TOKEN: ${{ secrets.ZENODO_SANDBOX_TOKEN }}
+      ZENODO_TARGET: ${{ vars.ZENODO_TARGET }}
+      GDOC_ID: ${{ vars.GDOC_ID }}
+      GDRIVE_FOLDER_ID: ${{ vars.GDRIVE_FOLDER_ID }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check setup
+        run: python3 scripts/check_setup.py
