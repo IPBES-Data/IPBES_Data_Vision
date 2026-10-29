@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: "Release to publish, e.g. v1.2 (leave empty for the newest release)"
+        description: "Release to publish, e.g. v1.2 (leave empty for the newest prepared release)"
         required: false
 
 permissions:
@@ -27,7 +27,10 @@ jobs:
       - name: Download release.json and site from the GitHub release
         id: release
         run: |
-          [ -n "$TAG" ] || TAG=$(gh release list --exclude-pre-releases --limit 1 --json tagName -q '.[0].tagName')
+          # Default: the newest release whose notes still say "DOI reserved" (prepared, not yet published).
+          [ -n "$TAG" ] || TAG=$(gh api "repos/$GITHUB_REPOSITORY/releases" \
+            --jq '[.[] | select(.body | test("^DOI reserved:"; "m"))][0].tag_name // empty')
+          [ -n "$TAG" ] || { echo "### No prepared release is waiting to be published." >> "$GITHUB_STEP_SUMMARY"; exit 1; }
           echo "TAG=$TAG" >> "$GITHUB_ENV"
           gh release download "$TAG" -p release.json -p site.tar.gz -D build
           echo "doi=$(jq -r .doi build/release.json)" >> "$GITHUB_OUTPUT"

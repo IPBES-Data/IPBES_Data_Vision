@@ -29,6 +29,9 @@ jobs:
 
       - uses: r-lib/actions/setup-tinytex@v2
 
+      - name: Check the version rules
+        run: python3 scripts/test_versions.py
+
       - name: Render website and PDF (unreleased draft)
         run: python3 scripts/release.py build
 

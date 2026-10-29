@@ -1,10 +1,12 @@
 name: "Make a release or pre-release"
 
-# Started from the admin panel (Actions → this workflow → Run workflow).
-# Pre-release: tag v<version>-rc.<n>, built without DOI, PDF archived on the GitHub
+# Started from the admin panel (Actions → this workflow → Run workflow). Version numbers follow
+# the rules in admin.qmd ("Version rules") and are chosen by scripts/versions.py.
+# Pre-release: next release candidate (v1.1-rc.2), built without DOI, PDF archived on the GitHub
 #   pre-release, site deployed to /preview/. Zenodo is not contacted.
-# Release: tag v<version>, DOI reserved and Zenodo draft filled; nothing public changes
-#   until the "Publish release" workflow is run.
+# Release: the latest release candidate unchanged (v1.1-rc.2 → v1.1; v1.1-test.<n> while
+#   ZENODO_TARGET=sandbox), DOI reserved and Zenodo draft filled; nothing public changes until
+#   the "Publish release" workflow is run.
 on:
   workflow_dispatch:
     inputs:
@@ -14,9 +16,12 @@ on:
         options:
           - "Pre-release (for review, no DOI)"
           - "Release (citable, with DOI)"
-      version:
-        description: "Version number, e.g. 1.2"
-        required: true
+      bump:
+        description: "First pre-release after a release only: is this a minor or a major new version?"
+        type: choice
+        options:
+          - "Minor (e.g. 1.0 → 1.1)"
+          - "Major (e.g. 1.0 → 2.0)"
       notes:
         description: "What changed? Separate items with ;"
         required: true
@@ -33,11 +38,13 @@ jobs:
     runs-on: ubuntu-latest
     env:
       GH_TOKEN: ${{ github.token }}
-      VERSION: ${{ inputs.version }}
+      MAJOR: ${{ startsWith(inputs.bump, 'Major') }}
       NOTES: ${{ inputs.notes }}
       PRERELEASE: ${{ startsWith(inputs.kind, 'Pre-release') }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # version numbers come from the tags and their commits
 
       - uses: r-lib/actions/setup-r@v2
         with:
@@ -56,7 +63,7 @@ jobs:
 
       - name: Build pre-release (no DOI, no Zenodo)
         if: env.PRERELEASE == 'true'
-        run: python3 scripts/release.py prepare --version "$VERSION" --notes "$NOTES" --prerelease
+        run: python3 scripts/release.py prepare --prerelease --notes "$NOTES" $([ "$MAJOR" = true ] && echo --major)
 
       - name: Reserve DOI, build, and fill the Zenodo draft
         if: env.PRERELEASE != 'true'
@@ -64,22 +71,28 @@ jobs:
           ZENODO_TARGET: ${{ vars.ZENODO_TARGET }}
           ZENODO_TOKEN: ${{ secrets.ZENODO_TOKEN }}
           ZENODO_SANDBOX_TOKEN: ${{ secrets.ZENODO_SANDBOX_TOKEN }}
-        run: python3 scripts/release.py prepare --version "$VERSION" --notes "$NOTES"
+        run: python3 scripts/release.py prepare --notes "$NOTES"
 
       - name: Create the GitHub release with PDF and site attached
         run: |
           tag=$(jq -r .tag build/release.json)
           jq -r .notes build/release.json > build/notes.md
+          title="Version ${tag#v}"
           if [ "$PRERELEASE" = true ]; then
             printf '\n\nPre-release for review. No DOI; not for citation.\n' >> build/notes.md
             flag=--prerelease
           else
-            printf '\n\nDOI reserved: %s (active after "Publish release" is run)\n' "$(jq -r .doi build/release.json)" >> build/notes.md
+            printf '\n\nRelease candidate %s, unchanged.\n' "$(jq -r .candidate build/release.json)" >> build/notes.md
+            printf '\nDOI reserved: %s (active after "Publish release" is run)\n' "$(jq -r .doi build/release.json)" >> build/notes.md
             flag=
+            if [ "$(jq -r .test build/release.json)" = true ]; then
+              title="Test release ${tag#v} (Zenodo sandbox, not a version)"
+              flag=--prerelease   # keeps test releases from showing as the latest release
+            fi
           fi
           tar -czf build/site.tar.gz -C _site .
           gh release create "$tag" build/*.pdf build/site.tar.gz build/release.json \
-            --target "$GITHUB_SHA" --title "Version ${tag#v}" --notes-file build/notes.md $flag
+            --target "$GITHUB_SHA" --title "$title" --notes-file build/notes.md $flag
           echo "TAG=$tag" >> "$GITHUB_ENV"
 
       - name: Deploy pre-release to /preview/

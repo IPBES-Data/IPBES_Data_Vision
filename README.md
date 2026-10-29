@@ -27,6 +27,7 @@ Requirements: R (`rmarkdown`, `knitr`), Quarto, TinyTeX, Python 3.
 |---|---|
 | Import text from Google Doc | Pull request with the new text, title and editors |
 | Export text to Google Doc | Creates a new Google Doc in your Drive with the current text and bibliographic tables |
-| Make a release or pre-release | Pre-release `v1.2-rc.<n>`: PDF on the GitHub pre-release, site at `/preview/`, no DOI. Release `v1.2`: DOI reserved, Zenodo draft filled, nothing public yet |
+| Number accepted text changes (beta) | Runs on every change to the text on `main`: tags the next beta, e.g. `v1.1-beta.3` |
+| Make a release or pre-release | Pre-release: next release candidate, e.g. `v1.1-rc.2`, PDF on the GitHub pre-release, site at `/preview/`, no DOI. Release: the latest candidate unchanged becomes `v1.1`; DOI reserved, Zenodo draft filled, nothing public yet. Version rules: `admin.qmd` |
 | Publish release | Zenodo draft published (DOI minted), site deployed |
 | Check website and PDF build | Runs on every pull request; the rendered site and PDF are downloadable |

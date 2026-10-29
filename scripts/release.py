@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 """Build and release the IPBES Data Management Vision (Python stdlib only).
 
-  release.py build                                 render site + PDF as an unreleased draft
-  release.py prepare --version 1.2 --notes "a; b"  release v1.2: reserve DOI, render, fill Zenodo draft
-  release.py prepare --version 1.2 --prerelease    pre-release v1.2-rc.<n>: render without DOI, no Zenodo
-  release.py publish build/release.json            publish (mint) the Zenodo draft from prepare
+  release.py build                                    render site + PDF as an unreleased draft
+  release.py prepare --prerelease [--major] --notes   next release candidate, e.g. v1.1-rc.2: no DOI, no Zenodo
+  release.py prepare --notes "a; b"                   release the latest candidate, e.g. v1.1-rc.2 -> v1.1:
+                                                      reserve DOI, render, fill Zenodo draft (v1.1-test.<n> on sandbox)
+  release.py publish build/release.json               publish (mint) the Zenodo draft from prepare
 
+Version numbers follow the rules in admin.qmd and come from scripts/versions.py.
 `prepare` writes build/release.json (tag, version, notes, DOI, Zenodo draft) for the workflows.
 
 Zenodo is only contacted by `prepare` (release) and `publish`. The target comes from
@@ -25,6 +27,8 @@ import urllib.parse
 import urllib.request
 from pathlib import Path
 
+import versions
+
 QMD = "IPBES_Data_Vision.qmd"
 PDF_PREFIX = "IPBES-Data-Management-Vision"
 SITE = Path("_site")
@@ -40,20 +44,6 @@ def frontmatter() -> dict:
     code = f'cat(jsonlite::toJSON(rmarkdown::yaml_front_matter("{QMD}"), auto_unbox = TRUE))'
     out = subprocess.run(["Rscript", "-e", code], capture_output=True, text=True, check=True)
     return json.loads(out.stdout)
-
-
-def next_tag(version: str, prerelease: bool) -> str:
-    """v1.2 for a release (must be new), v1.2-rc.<n> (next free n) for a pre-release."""
-    if not re.fullmatch(r"\d+(\.\d+)*", version):
-        sys.exit(f"Version must look like 1.2 (numbers and dots), got {version!r}.")
-    out = subprocess.run(["git", "ls-remote", "--tags", "origin"], capture_output=True, text=True, check=True).stdout
-    tags = set(re.findall(r"refs/tags/([^\s^]+)", out))
-    if not prerelease:
-        if f"v{version}" in tags:
-            sys.exit(f"Version {version} has already been released (tag v{version} exists). Choose a new version.")
-        return f"v{version}"
-    rcs = [int(m.group(1)) for t in tags if (m := re.fullmatch(rf"v{re.escape(version)}-rc\.(\d+)", t))]
-    return f"v{version}-rc.{max(rcs, default=0) + 1}"
 
 
 def notes_markdown(notes: str) -> str:
@@ -141,18 +131,22 @@ def cmd_build(args) -> None:
 
 
 def cmd_prepare(args) -> None:
-    fm = frontmatter()
-    tag = next_tag(args.version, args.prerelease)
+    fm, ts = frontmatter(), versions.tags()
+    zenodo = None if args.prerelease else Zenodo(os.environ.get("ZENODO_TARGET", ""))
+    if zenodo:
+        tag, candidate = versions.release_tag(ts, test=zenodo.target == "sandbox")
+    else:
+        tag, candidate = versions.rc_tag(ts, args.major), None
     version, notes, today = tag[1:], notes_markdown(args.notes), datetime.date.today()
     meta = {"version": version, "release_date": today.isoformat(), "release_year": str(today.year),
             "release_notes": notes}
-    record = {"tag": tag, "version": version, "prerelease": args.prerelease, "notes": notes}
-    print(f"Preparing {'pre-release' if args.prerelease else 'release'} {tag}")
+    record = {"tag": tag, "version": version, "prerelease": args.prerelease, "test": "-test." in tag,
+              "candidate": candidate, "notes": notes}
+    print(f"Preparing {tag}" + (f" from release candidate {candidate}" if candidate else ""))
 
-    if args.prerelease:
+    if not zenodo:
         render(dict(meta, prerelease="true"))
     else:
-        zenodo = Zenodo(os.environ.get("ZENODO_TARGET", ""))
         draft = zenodo.new_version(fm["zenodo"][zenodo.concept_key])
         doi = zenodo.doi(draft["metadata"]["prereserve_doi"]["doi"])
         print(f"Reserved {doi} on Zenodo {zenodo.target} (draft {draft['id']})")
@@ -179,9 +173,9 @@ def main() -> None:
     sub = parser.add_subparsers(dest="command", required=True)
     sub.add_parser("build").set_defaults(func=cmd_build)
     prepare = sub.add_parser("prepare")
-    prepare.add_argument("--version", required=True, help="e.g. 1.2")
     prepare.add_argument("--notes", default="", help="release notes, items separated by ';'")
     prepare.add_argument("--prerelease", action="store_true")
+    prepare.add_argument("--major", action="store_true", help="first pre-release of a cycle: next major version")
     prepare.set_defaults(func=cmd_prepare)
     publish = sub.add_parser("publish")
     publish.add_argument("release_json")

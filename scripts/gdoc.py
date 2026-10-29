@@ -2,13 +2,14 @@
 """Move the Vision text between Google Docs and this repository (Python stdlib + Pandoc).
 
   gdoc.py import <doc link or id>       Google Doc -> _content.md (+ media/) and the bibliographic fields in the .qmd
-  gdoc.py export [folder link or id]    bibliographic fields + _content.md -> a new Google Doc (default: My Drive)
+  gdoc.py export [folder link or id]    bibliographic fields + _content.md -> a new Google Doc (default: My Drive),
+                                        noting the version it is based on
   gdoc.py login <client.json>           one-time sign-in; prints the GOOGLE_OAUTH secret on stdout
 
 Google Doc layout (export writes it, import reads it). Everything before the first heading is front matter:
   - a "Document information" table, one row per field (FIELDS below), value in the second column;
   - an "Editors" table with the columns Name | Institution | ORCID, one row per editor;
-  - anything else there (notes, table of contents) is ignored.
+  - anything else there (the "Based on version" line, notes, table of contents) is ignored.
 The text starts at the first Heading 1 that is not a table of contents.
 
 Auth: GOOGLE_OAUTH holds {"client_id", "client_secret", "refresh_token"} from `login`, so import and
@@ -28,6 +29,8 @@ import urllib.request
 import webbrowser
 from datetime import datetime, timezone
 from pathlib import Path
+
+import versions
 
 QMD = Path("IPBES_Data_Vision.qmd")
 CONTENT = Path("_content.md")
@@ -189,7 +192,9 @@ def export_docx() -> bytes:
     with tempfile.TemporaryDirectory() as tmp:
         Path(tmp, "meta.txt").write_text("$meta-json$")
         meta = json.loads(pandoc(str(QMD), "-t", "plain", "--template", str(Path(tmp, "meta.txt"))))
-        front = [f"*{NOTE}*", "", "**Document information**", "", "| Field | Value |", "|---|---|"]
+        based_on = versions.based_on(versions.tags())
+        front = [f"*Based on version {based_on} (for information; not imported).*", "", f"*{NOTE}*", "",
+                 "**Document information**", "", "| Field | Value |", "|---|---|"]
         front += [f"| {label} | {cell(meta.get(key))} |" for label, key in FIELDS.items()]
         front += ["", "**Editors**", "", "| " + " | ".join(EDITOR_COLUMNS) + " |", "|---|---|---|"]
         front += [f"| {cell(e.get('name'))} | {cell(e.get('institution'))} | {cell(e.get('orcid'))} |"

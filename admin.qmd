@@ -11,11 +11,13 @@ execute:
 ```{=html}
 <div id="panel" data-repo="IPBES-Data/IPBES_Data_Vision">
 
+<p class="versions" id="versions"></p>
+
 <div class="grid">
   <div class="card">
     <h3>1. Import</h3>
     <p>Bring in the edits from the Google Doc.</p>
-    <a class="btn" data-workflow="gdoc-import.yml" title="Copies the text and the Document information and Editors tables from the Google Doc. Opens a page listing every change; Merge it to accept, Close it to discard. The website does not change. Form: Doc link (empty = usual Doc).">Import from Google Doc</a>
+    <a class="btn" data-workflow="gdoc-import.yml" title="Copies the text and the Document information and Editors tables from the Google Doc. Opens a page listing every change; Merge it to accept (it then gets the next beta number, e.g. 1.1-beta.3), Close it to discard. The website does not change. Form: Doc link (empty = usual Doc).">Import from Google Doc</a>
     <p class="status" data-status="gdoc-import.yml"></p>
   </div>
   <div class="card">
@@ -27,7 +29,7 @@ execute:
   <div class="card">
     <h3>3. Release</h3>
     <p>Pre-release (review) or release (DOI).</p>
-    <a class="btn" data-workflow="release.yml" title="Pre-release: a draft for review, no DOI, shown at the Pre-release preview. Release: a citable version; reserves a DOI and prepares a Zenodo draft, but nothing is public until Publish. Form: type, version (e.g. 1.2), what changed (separate items with ;).">Make a release or pre-release</a>
+    <a class="btn" data-workflow="release.yml" title="Pre-release: the next release candidate (e.g. 1.1-rc.2) for review; no DOI; shown at the Pre-release preview. The first pre-release after a release asks: minor or major. Release: publishes the latest release candidate unchanged as the final version (e.g. 1.1); reserves a DOI and prepares a Zenodo draft, but nothing is public until Publish. Refused if the text changed since that candidate. Form: type, minor/major, what changed (separate items with ;).">Make a release or pre-release</a>
     <p class="status" data-status="release.yml"></p>
   </div>
   <div class="card">
@@ -62,6 +64,7 @@ execute:
 #panel .card p.status { color: #555; font-size: 0.85rem; }
 #panel .waiting { background: #fff6d6; border-radius: 6px; padding: 0.5rem 0.75rem; margin: 0 0 0.5rem; }
 #panel .links { font-size: 0.9rem; }
+#panel .versions { margin: 0.25rem 0 0; }
 #panel .hint { font-size: 0.9rem; background: #eef4fb; border-radius: 6px; padding: 0.5rem 0.75rem; }
 </style>
 
@@ -93,6 +96,22 @@ execute:
     const imports = (pulls || []).filter((p) => p.head.ref.startsWith("google-doc-import-"));
     if (imports.length) notice(`Import waiting for review (step 1): ${imports.map((p) => link(p.html_url, p.title)).join(", ")}`);
   });
+  // Current versions, from the tags (same rules as scripts/versions.py).
+  api("/tags?per_page=100").then((list) => {
+    const ts = (list || []).map((t) => t.name.match(/^v(\d+)\.(\d+)(?:-(beta|rc|test)\.(\d+))?$/)).filter(Boolean)
+      .map((m) => ({ v: [+m[1], +m[2]], kind: m[3] || null, n: +(m[4] || 0) }));
+    const cmp = (a, b) => a[0] - b[0] || a[1] - b[1];
+    const highest = (vs, start) => vs.reduce((x, y) => (cmp(y, x) > 0 ? y : x), start);
+    const released = highest(ts.filter((t) => !t.kind).map((t) => t.v), [1, 0]);
+    const working = ts.filter((t) => (t.kind === "beta" || t.kind === "rc") && cmp(t.v, released) > 0).map((t) => t.v);
+    const target = working.length ? highest(working, working[0]) : [released[0], released[1] + 1];
+    const last = (kind) => Math.max(0, ...ts.filter((t) => t.kind === kind && cmp(t.v, target) === 0).map((t) => t.n));
+    const v = (x) => x.join(".");
+    document.getElementById("versions").innerHTML = `Latest release: <b>${v(released)}</b> · Working towards <b>${v(target)}</b>` +
+      (last("rc") ? ` · latest pre-release ${v(target)}-rc.${last("rc")}` : " · no pre-release yet") +
+      (last("beta") ? ` · latest accepted change ${v(target)}-beta.${last("beta")}` : "");
+  });
+
   api("/releases?per_page=20").then((releases) => {
     const pending = (releases || []).filter((r) => !r.prerelease && /^DOI reserved:/m.test(r.body || ""));
     if (pending.length) notice(`Release ready to publish (step 4): ${pending.map((r) => link(r.html_url, r.tag_name)).join(", ")}`);
@@ -105,14 +124,31 @@ You need to be signed in to GitHub with an account that may edit this repository
 
 ## What the buttons do
 
-1. **Import from Google Doc** copies the text and the bibliographic tables from the Google Doc. Nothing changes on the website yet: you get a page showing every change, where you accept (**Merge**) or discard (**Close**) it. The form takes a Doc link; leave it empty for the usual Doc.
+1. **Import from Google Doc** copies the text and the bibliographic tables from the Google Doc. Nothing changes on the website yet: you get a page showing every change, where you accept (**Merge**) or discard (**Close**) it. An accepted import gets the next beta number. The form takes a Doc link; leave it empty for the usual Doc.
 2. **Export to Google Doc** creates a **new** Google Doc in your Drive with the current text and the bibliographic tables; its link is shown under the run's *details*. Existing Docs are never changed. Paste the new Doc's link into the import form later (or ask the technical admin to make it the usual Doc).
-3. **Make a release or pre-release** asks for the type, the version number (e.g. `1.2`) and what changed (items separated by `;`).
-   - **Pre-release**: a draft for review. No DOI, archived on GitHub, shown at the *Pre-release preview* link.
-   - **Release**: a citable version. A DOI is reserved and a Zenodo draft prepared, but nothing is public until step 4.
+3. **Make a release or pre-release** asks for the type, whether the new version is minor or major (only used by the first pre-release after a release) and what changed (items separated by `;`). There is no version number to type: it follows the rules below.
+   - **Pre-release**: the next release candidate, e.g. `1.1-rc.2`. No DOI, archived on GitHub, shown at the *Pre-release preview* link.
+   - **Release**: the latest release candidate, unchanged, becomes the final version, e.g. `1.1-rc.2` → `1.1`. A DOI is reserved and a Zenodo draft prepared, but nothing is public until step 4. If the text changed after that candidate, make a new pre-release first.
 4. **Publish release**: after a release in step 3, check the Zenodo draft and the PDF, then publish. This makes the DOI permanent and updates the website. Leave the form empty to publish the newest release.
 
 This panel is always at <https://ipbes-data.github.io/IPBES_Data_Vision/admin/> and is updated whenever the repository changes.
+
+## Version rules
+
+Released versions are `MAJOR.MINOR` (`1.0`, `1.1`, `2.0`); work in progress carries a suffix (`1.1-beta.3`, `1.1-rc.2`). A *cycle* is the work between two releases; the line above the buttons shows the current one.
+
+| Step | Version |
+|---|---|
+| Import (or other change to the text) accepted | next **beta**, e.g. `1.1-beta.3`: only recorded, no PDF, no DOI |
+| Export | unchanged; the Doc shows "Based on version …" |
+| Pre-release | next **release candidate**, e.g. `1.1-rc.2`: PDF on GitHub, preview site, no DOI |
+| Release + Publish | the latest release candidate **unchanged** becomes `1.1`, with a DOI |
+
+- The **first pre-release after a release** decides minor (`1.0 → 1.1`) or major (`1.0 → 2.0`). Until then, betas count towards the next minor; after a major choice they continue as `2.0-beta.N`.
+- Beta and release-candidate numbers start at 1 for each new version; betas keep counting after a release candidate.
+- A release always publishes a release candidate exactly as it was reviewed; if the text changed since, make a new pre-release first. Released numbers only go up.
+- While `ZENODO_TARGET` is `sandbox`, releases are test releases tagged `1.1-test.N`; they are not versions and do not end the cycle.
+- The numbers are git tags (`v1.1-beta.3`, …), handed out by `scripts/versions.py`.
 
 ## One-time setup (for the technical admin)
 
