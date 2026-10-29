@@ -101,7 +101,8 @@ def format_editors(editors: list) -> str:
 def split_doc(markdown: str):
     """Split converted Doc Markdown into (front-matter lines, body from the first heading)."""
     lines = markdown.splitlines()
-    first = next((i for i, line in enumerate(lines) if line.startswith("## ")), None)
+    toc = re.compile(r"^## (table of )?contents\b", re.I)  # a contents heading is still front matter
+    first = next((i for i, line in enumerate(lines) if line.startswith("## ") and not toc.match(line)), None)
     if first is None:
         sys.exit("No headings found in the Google Doc; section titles must use Heading 1/2/3 styles.")
     return lines[:first], "\n".join(lines[first:]).strip() + "\n"
@@ -164,7 +165,7 @@ def export_docx() -> bytes:
         meta = json.loads(pandoc(str(QMD), "-t", "plain", "--template", str(Path(tmp, "meta.txt"))))
         head = f"Editors: {format_editors(meta.get('editors', []))}\n\nContact: {meta.get('contact_email', '')}\n\n"
         out = Path(tmp, "doc.docx")
-        pandoc("-f", "markdown", "-o", str(out), "--shift-heading-level-by=-1", "--resource-path=.",
+        pandoc("-f", "markdown", "-o", str(out), "--shift-heading-level-by=-1", "--resource-path=.", "--toc",
                "-M", f"title={meta['title']}", stdin=head + CONTENT.read_text())
         return out.read_bytes()
 
