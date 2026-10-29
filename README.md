@@ -15,7 +15,7 @@ Living-document implementation of the **IPBES Data Management Vision**, built wi
 
 ## Build locally
 
-Requirements: R (`rmarkdown`, `knitr`), Quarto, TinyTeX, Python 3.
+Requirements: Quarto, TinyTeX (`quarto install tinytex`), Python 3.
 
 - `make preview`: live preview while editing
 - `make build`: render the website into `_site/` and the PDF into `build/`, marked as an unreleased draft

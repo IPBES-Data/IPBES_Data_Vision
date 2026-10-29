@@ -22,6 +22,7 @@ import re
 import shutil
 import subprocess
 import sys
+import tempfile
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -33,6 +34,7 @@ QMD = "IPBES_Data_Vision.qmd"
 PDF_PREFIX = "IPBES-Data-Management-Vision"
 SITE = Path("_site")
 BUILD = Path("build")
+GENERATED = Path("_generated")
 NOTES_HEADING = "<h3>Release notes</h3>"
 ZENODO = {
     "sandbox": ("https://sandbox.zenodo.org", "ZENODO_SANDBOX_TOKEN", "sandbox_concept_doi"),
@@ -41,9 +43,79 @@ ZENODO = {
 
 
 def frontmatter() -> dict:
-    code = f'cat(jsonlite::toJSON(rmarkdown::yaml_front_matter("{QMD}"), auto_unbox = TRUE))'
-    out = subprocess.run(["Rscript", "-e", code], capture_output=True, text=True, check=True)
+    """The .qmd's YAML frontmatter, read by Pandoc (no YAML library in the stdlib)."""
+    with tempfile.TemporaryDirectory() as tmp:
+        template = Path(tmp, "meta.txt")
+        template.write_text("$meta-json$")
+        out = subprocess.run(["quarto", "pandoc", QMD, "-t", "plain", "--template", str(template)],
+                             capture_output=True, text=True, check=True)
     return json.loads(out.stdout)
+
+
+def write_includes(meta: dict, fm: dict) -> None:
+    """Version-dependent parts of the pages, included by the .qmd files from _generated/:
+    front.md (website banner and version card; PDF metadata pages), citation.md, concept.md."""
+    e = html.escape
+    version, notes = meta.get("version") or "draft", meta.get("release_notes") or "Not released yet."
+    date, year = meta.get("release_date") or "unreleased", meta.get("release_year") or str(datetime.date.today().year)
+    doi, pre, current = meta.get("doi", ""), bool(meta.get("prerelease")), meta.get("current_release") or "1.0"
+    concept = fm["zenodo"]["concept_doi"]
+    editors = ", ".join(x["name"] for x in fm.get("editors", []))
+    doi_md = f"[{doi}](https://doi.org/{doi})" if doi else "None (pre-release)" if pre else "**Will be inserted upon release**"
+    doi_html = f'<a href="https://doi.org/{doi}">{doi}</a>' if doi else "none (pre-release)" if pre else "none (draft)"
+    current_link = f'<a href="https://doi.org/{concept}">version {current}</a>'
+    if pre:
+        label = "Beta" if "-beta." in version else "Pre-release"
+        banner = ("prerelease", "exclamation-triangle", f"<b>{label} {version}</b> &middot; for review, not for "
+                  f"citation &middot; the current released version is {current_link}")
+    elif doi:
+        banner = ("release", "check-circle", f"<b>Version {version}</b> &middot; released {date} &middot; "
+                  f"cite it with DOI {doi_html}")
+    else:
+        banner = ("draft", "pencil", f"<b>Working draft</b> &middot; not released, no DOI &middot; the current "
+                  f"released version is {current_link}")
+    items = [line[2:] for line in notes.splitlines() if line.startswith("- ")]
+    notes_html = "<ul>" + "".join(f"<li>{e(i)}</li>" for i in items) + "</ul>" if items else f"<p>{e(notes)}</p>"
+    citation_md = f"IPBES ({year}): *{fm['title']}*, version {version}, {editors} (eds.). {fm['publisher']}. DOI: {doi_md}"
+    citation_html = (f"IPBES ({year}): <i>{e(fm['title'])}</i>, version {e(version)}, {e(editors)} (eds.). "
+                     f"{e(fm['publisher'])}. DOI: {doi_html}")
+
+    GENERATED.mkdir(exist_ok=True)
+    (GENERATED / "front.md").write_text(f"""::: {{.content-visible when-format="html"}}
+```{{=html}}
+<div class="status-banner status-{banner[0]}"><i class="bi bi-{banner[1]}"></i><span>{banner[2]}</span></div>
+<div class="version-card"><div class="facts">
+<div><div class="label">Version</div>{e(version)}</div><div><div class="label">Date</div>{e(date)}</div>
+<div><div class="label">DOI</div>{doi_html}</div><div><div class="label">Editors</div>{e(editors)}</div></div>
+<details><summary>Release notes</summary>{notes_html}</details>
+<details><summary>How to cite</summary><p>{citation_html}</p></details></div>
+<div class="vision-start"></div>
+```
+:::
+
+::: {{.content-visible when-format="pdf"}}
+\\newpage
+
+## Release Metadata {{.unnumbered}}
+
+- **Version:** {version}
+- **Release date:** {date}
+- **DOI:** {doi_md}
+- **Latest-version DOI:** [{concept}](https://doi.org/{concept})
+- **PDF:** Download the latest PDF from the website.
+
+## Release Notes {{.unnumbered}}
+
+{notes}
+
+\\newpage
+:::
+""")
+    (GENERATED / "citation.md").write_text(citation_md + "\n")
+    (GENERATED / "concept.md").write_text(
+        f"Citable versions with a DOI, read live from Zenodo. Concept DOI (always the latest version): "
+        f"[{concept}](https://doi.org/{concept})\n\n"
+        f'<div id="release-list" data-concept-doi="{concept}"><p>Loading releases from Zenodo&hellip;</p></div>\n')
 
 
 def notes_markdown(notes: str) -> str:
@@ -53,17 +125,17 @@ def notes_markdown(notes: str) -> str:
 
 
 def render(meta: dict) -> Path:
-    """Render the website and the PDF; meta goes to the templates (-M) and the R chunks (IPBES_*)."""
+    """Render the website and the PDF; meta goes to the templates (-M) and into _generated/ (write_includes)."""
     meta = {key: meta.get(key, "") for key in
             ("version", "release_date", "release_year", "doi", "prerelease", "release_notes",
              "current_release")}
     meta["current_release"] = meta["current_release"] or versions.fmt(versions.latest_release(versions.tags()))
+    write_includes(meta, frontmatter())
     flags = [arg for key, value in meta.items() if value and key != "release_notes" for arg in ("-M", f"{key}={value}")]
-    env = dict(os.environ, **{f"IPBES_{key.upper()}": value for key, value in meta.items()})
     pdf = BUILD / f"{PDF_PREFIX}-{'draft' if meta['version'] == 'draft' else 'v' + meta['version']}.pdf"
-    subprocess.run(["quarto", "render", "--to", "html", *flags], env=env, check=True)
+    subprocess.run(["quarto", "render", "--to", "html", *flags], check=True)
     subprocess.run(["quarto", "render", QMD, "--to", "pdf", "--output", pdf.name, "--output-dir", str(BUILD), *flags],
-                   env=env, check=True)
+                   check=True)
     (SITE / "assets").mkdir(parents=True, exist_ok=True)
     shutil.copy2(pdf, SITE / "assets" / f"{PDF_PREFIX}-latest.pdf")
     print(f"Built {SITE}/ and {pdf}")
@@ -131,6 +203,11 @@ class Zenodo:
                  data=pdf.read_bytes(), ctype="application/octet-stream")
 
 
+def cmd_includes(args) -> None:
+    """Write the draft includes only, e.g. before `quarto preview`."""
+    write_includes({}, frontmatter())
+
+
 def cmd_build(args) -> None:
     render({"version": "draft", "release_date": "unreleased", "release_year": str(datetime.date.today().year)})
 
@@ -177,6 +254,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = parser.add_subparsers(dest="command", required=True)
     sub.add_parser("build").set_defaults(func=cmd_build)
+    sub.add_parser("includes").set_defaults(func=cmd_includes)
     prepare = sub.add_parser("prepare")
     prepare.add_argument("--notes", default="", help="release notes, items separated by ';'")
     prepare.add_argument("--prerelease", action="store_true")

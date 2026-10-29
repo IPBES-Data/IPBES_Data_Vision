@@ -6,7 +6,7 @@ help:
 
 ## preview: Live preview of the main document while editing.
 preview:
-	quarto preview IPBES_Data_Vision.qmd
+	python3 scripts/release.py includes && quarto preview IPBES_Data_Vision.qmd
 
 ## build: Render the website (_site/) and the PDF (build/) as an unreleased draft.
 build:
