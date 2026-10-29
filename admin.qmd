@@ -178,7 +178,7 @@ People who use the panel need *Write* access to the repository.
 Import and export act as **one Google account** (yours, or a dedicated one): they can read every Doc that account can open, and exports are new Docs owned by it, using its normal Drive storage. Set up once, on a computer with Python:
 
 1. In the [Google Cloud console](https://console.cloud.google.com/), signed in with that account, create a project and enable the **Google Drive API**. No billing is needed.
-2. *Google Auth Platform → Branding*: give the app a name (e.g. "IPBES Vision sync") and your e-mail. *Audience*: user type **External**, then **Publish app** (status "In production"). In "Testing" status Google ends the sign-in after 7 days.
+2. *Google Auth Platform → Branding* (German: *Branding*): app name (e.g. "IPBES Vision"), support e-mail and developer contact e-mail, plus — required for publishing — **App home page** `https://ipbes-data.github.io/IPBES_Data_Vision/admin/`, **Privacy policy link** `https://ipbes-data.github.io/IPBES_Data_Vision/admin/#privacy` and **Authorized domain** `ipbes-data.github.io`; save. Then *Audience* (*Zielgruppe*): user type **External**, then **Publish app** (*App veröffentlichen*); the status must read "In production" (*In Produktion*). In "Testing" status only listed test users can sign in, and Google ends the sign-in after 7 days.
 3. *Clients → Create client*, type **Desktop app**; download the JSON file (e.g. `client.json`).
 4. In this repository run, with the [GitHub CLI](https://cli.github.com/) signed in:
 
