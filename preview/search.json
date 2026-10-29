@@ -1,0 +1,100 @@
+[
+  {
+    "objectID": "older-releases.html",
+    "href": "older-releases.html",
+    "title": "All Releases",
+    "section": "",
+    "text": "Vision | All Releases | Latest PDF"
+  },
+  {
+    "objectID": "older-releases.html#releases",
+    "href": "older-releases.html#releases",
+    "title": "All Releases",
+    "section": "Releases",
+    "text": "Releases\nCitable versions with a DOI, read live from Zenodo. Concept DOI (always the latest version): 10.5281/zenodo.5513473\n\n\nLoading releases from Zenodo…"
+  },
+  {
+    "objectID": "older-releases.html#pre-releases",
+    "href": "older-releases.html#pre-releases",
+    "title": "All Releases",
+    "section": "Pre-releases",
+    "text": "Pre-releases\nDrafts for review, archived on GitHub. Pre-releases have no DOI and are not for citation.\n\n\nLoading pre-releases from GitHub…"
+  },
+  {
+    "objectID": "index.html#release-metadata",
+    "href": "index.html#release-metadata",
+    "title": "The IPBES long-term vision of data and knowledge management",
+    "section": "Release Metadata",
+    "text": "Release Metadata\n\nVersion: 2.0-rc.1\nRelease date: 2026-10-29\nDOI: None (pre-release)\nLatest-version DOI: 10.5281/zenodo.5513473\nPDF: Download PDF"
+  },
+  {
+    "objectID": "index.html#release-notes",
+    "href": "index.html#release-notes",
+    "title": "The IPBES long-term vision of data and knowledge management",
+    "section": "Release Notes",
+    "text": "Release Notes\n\nFirst release candidate of version 2.0, for review\n\n\nVision | All Releases | Latest PDF"
+  },
+  {
+    "objectID": "index.html#introduction",
+    "href": "index.html#introduction",
+    "title": "The IPBES long-term vision of data and knowledge management",
+    "section": "1 Introduction",
+    "text": "1 Introduction\nThe long-term vision on data and knowledge management provides the overall direction for how IPBES will organise, manage and deliver data and knowledge across its work programme up to 2030. It sets out the long-term ambition of the Platform in this area and outlines the targets and pathways needed to achieve it. While the data and knowledge management policy defines the principles, standards and procedures that govern data and knowledge management within IPBES, the long-term vision describes the desired state toward which these efforts are directed.\nThis vision outlines the main objectives, guiding principles and operational tracks that will ensure that all IPBES products are transparent, traceable, accessible and reusable. It supports the delivery of the four core functions of IPBES and complements both the data and knowledge management policy and the code of practice on the use of artificial intelligence, tailored to the needs of assessments. It also provides the framework for the continued integration of the FAIR and CARE principles in all aspects of data and knowledge management within IPBES.\nThe implementation of this vision will be pursued through two closely linked tracks: (i) data and knowledge management within IPBES, focusing on the organisation, documentation and curation of information used and generated in assessments; and (ii) delivery and monitoring of IPBES products, focusing on their accessibility, interoperability and long-term preservation. Together, these tracks form a coherent structure to guide actions up to 2030 and to inform the development of a strategic roadmap in the next intersessional period."
+  },
+  {
+    "objectID": "index.html#vision-and-aims",
+    "href": "index.html#vision-and-aims",
+    "title": "The IPBES long-term vision of data and knowledge management",
+    "section": "2 Vision and aims",
+    "text": "2 Vision and aims\nBy 2030, IPBES ensures the open and transparent exchange of knowledge and data between science, policy and society regarding its products and processes, and contributes to strengthening similar exchanges more broadly in support of biodiversity, ecosystem services and human well-being. Data, processes and workflows supporting the Platform in fulfilling its mandate will be fully compliant with the FAIR and CARE principles and will make responsible use of new and emerging technologies, including artificial intelligence, to enhance the quality, efficiency, accessibility, and distribution of IPBES products.\nPursuing this vision will foster stronger collaboration, greater efficiency in production and distribution, and improved impact of IPBES products in bridging science, policy and society. The following aims provide the basis for moving towards this vision:\n\nEnsure that all IPBES products and their underlying knowledge and data follow the FAIR and CARE principles;\nStrengthen and institutionalise connections within IPBES concerning data and knowledge, including collaboration among all task forces and technical support units;\nStrengthen engagement with all relevant stakeholders, including Indigenous Peoples and local communities, on matters of data and knowledge, to enhance the scientific credibility, legitimacy and uptake of IPBES products; and\nRegularly assess new and advancing technologies, including artificial intelligence, for their potential to support this vision and suggest their use where appropriate."
+  },
+  {
+    "objectID": "index.html#roadmap-up-to-2030",
+    "href": "index.html#roadmap-up-to-2030",
+    "title": "The IPBES long-term vision of data and knowledge management",
+    "section": "3 Roadmap up to 2030",
+    "text": "3 Roadmap up to 2030\nThe roadmap up to 2030 is structured around two complementary tracks that together support the implementation of the long-term vision. Each track addresses one essential aspect of data and knowledge management and is accompanied by specific targets designed to enhance the transparency, accessibility and interoperability of IPBES products. Progress within these tracks will ensure the realisation of the four aims of the long-term vision and strengthen the science policy interface across all functions of the Platform."
+  },
+  {
+    "objectID": "index.html#track-1-data-and-knowledge-management-within-ipbes",
+    "href": "index.html#track-1-data-and-knowledge-management-within-ipbes",
+    "title": "The IPBES long-term vision of data and knowledge management",
+    "section": "4 Track 1: Data and knowledge management within IPBES",
+    "text": "4 Track 1: Data and knowledge management within IPBES\n\nBody of knowledge - By 2030, IPBES will have established the IPBES body of knowledge (IPBES BoK), a coherent framework connecting all data and knowledge used or generated through IPBES assessments. The BoK will document workflows, variables, indicators and identified knowledge gaps to ensure full transparency and traceability. It will serve as the central reference for linking assessment findings to their supporting evidence and will form the backbone for the future delivery of IPBES products.\nPolicy framework - All data and knowledge included in the IPBES BoK will follow the standards and procedures set out in the data and knowledge management policy and its annexes, including the FAIR and CARE principles and the code of practice on the use of artificial intelligence, tailored to the needs of assessments. The overarching goal is to improve data traceability, accountability, transparency, interoperability, reproducibility and ethical use across all IPBES activities.\nStandards and identifiers - Adherence to widely recognised interoperability standards will facilitate discovery, access and citation of data and knowledge. Persistent identifiers will be used for attribution and citation, ensuring that the original authors and contributors receive credit and that the use of IPBES products is traceable.\nAccess and stakeholders - IPBES members and stakeholders, including Indigenous Peoples and local communities, will be able to access and use IPBES products and the underlying knowledge and data documented in their production, ensuring equitable benefits from their use.\nScope and external data - While IPBES products rely extensively on external data and knowledge, including Indigenous and local knowledge, their management remains outside the direct scope of IPBES. However, IPBES will provide guidance encouraging the use of external data that follow the FAIR and CARE principles and other provisions of the data and knowledge management policy."
+  },
+  {
+    "objectID": "index.html#track-2-delivery-and-monitoring-of-ipbes-products",
+    "href": "index.html#track-2-delivery-and-monitoring-of-ipbes-products",
+    "title": "The IPBES long-term vision of data and knowledge management",
+    "section": "5 Track 2: Delivery and monitoring of IPBES products",
+    "text": "5 Track 2: Delivery and monitoring of IPBES products\n\nData delivery platform - By 2030, IPBES will operate a data delivery platform (IPBES DDP) that provides user friendly access to IPBES products, the data generated during their production and curated links to relevant external datasets. The DDP will draw on the IPBES BoK and follow the data and knowledge management policy to ensure consistent metadata, standards and attribution.\nMonitoring and reporting - Real time monitoring will provide information on the use and reach of IPBES products and on continued adherence to the data and knowledge management policy.\nConnections (internal and external) - Connections between IPBES products and datasets will be maintained and published to improve accessibility and enable cross product searches. Links between IPBES products and relevant external documents, such as national environmental policies, private sector standards and external data providers, will also be identified and published where appropriate.\nDynamic updating and versioning - IPBES will implement tools to monitor the availability of underlying external datasets, check compliance with the data and knowledge management policy and allow the automatic update of figures, tables and other visualisations that rely on dynamically changing data. Versioning of final IPBES products will be introduced to enable updates based on continuously delivered data, aligned with the concept of living or dynamic documents.\nStakeholder access and ILK sharing - The use of IPBES products, including the uptake of identified knowledge gaps, will be monitored and shared with IPBES members and stakeholders, including Indigenous Peoples and local communities. IPBES will ensure that final products incorporating Indigenous and local knowledge are shared back with the relevant knowledge holders to support dialogue and equitable benefit sharing.\nTraining and feedback - By 2030, IPBES will offer online training materials demonstrating how to access, navigate and use IPBES products, data and associated knowledge, along with open feedback channels for users and stakeholders."
+  },
+  {
+    "objectID": "index.html#targets-of-the-roadmap",
+    "href": "index.html#targets-of-the-roadmap",
+    "title": "The IPBES long-term vision of data and knowledge management",
+    "section": "6 Targets of the roadmap",
+    "text": "6 Targets of the roadmap\nThe targets for data and knowledge management and delivery up to 2030 are aligned with the six objectives of the IPBES rolling work programme to 2030: (1) assessing knowledge; (2) building capacity; (3) strengthening knowledge foundations; (4) supporting policy; (5) communicating and engaging; and (6) improving platform effectiveness. Progress toward these targets will guide implementation of the two tracks of the long-term vision and contribute to achieving the four aims of the long-term vision."
+  },
+  {
+    "objectID": "index.html#track-1-data-and-knowledge-management-within-ipbes-1",
+    "href": "index.html#track-1-data-and-knowledge-management-within-ipbes-1",
+    "title": "The IPBES long-term vision of data and knowledge management",
+    "section": "7 Track 1: Data and knowledge management within IPBES",
+    "text": "7 Track 1: Data and knowledge management within IPBES\nTarget 1.1 – By 2023, set up a public bibliographic library containing the underlying bibliographic records of IPBES products. (Objectives 1 & 3)\nTarget 1.2 – Starting in 2024, revise the IPBES data and knowledge management policy every two years and support its consistent implementation across the Platform. (Objective 3)\nTarget 1.3 – By 2025, ensure that all IPBES products adhere to the CARE principles (Collective Benefit, Authority to Control, Responsibility and Ethics). (Objectives 3 & 5)\nTarget 1.4 – By 2026, establish the IPBES BoK as a structured and publicly findable framework documenting all underlying resources used in IPBES products. (Objective 3)\nTarget 1.5 – By 2027, ensure that all IPBES products fully adhere to the FAIR principles (Findable, Accessible, Interoperable and Reusable). (Objective 3)"
+  },
+  {
+    "objectID": "index.html#track-2-delivery-and-monitoring-of-ipbes-products-1",
+    "href": "index.html#track-2-delivery-and-monitoring-of-ipbes-products-1",
+    "title": "The IPBES long-term vision of data and knowledge management",
+    "section": "8 Track 2: Delivery and monitoring of IPBES products",
+    "text": "8 Track 2: Delivery and monitoring of IPBES products\nTarget 2.1 – By 2026, disseminate knowledge gaps identified in IPBES products in a structured format with persistent identifiers to enable future monitoring and tracking. (Objective 3)\nTarget 2.2 By 2026, establish explicit computational links between IPBES products and relevant policy tools and methodologies to enhance policy support. (Objectives 3 & 4)\nTarget 2.3 – By 2025, develop a roadmap to strengthen the capacities of stakeholders for accessing and using IPBES data and knowledge. (Objectives 2, 3 & 5)\nTarget 2.4 – By 2026, develop a roadmap to strengthen the capacities of stakeholders, including policy makers, for accessing and using IPBES data and knowledge. (Objectives 2, 3 & 5)\nTarget 2.5 – By 2027, monitor the degree to which external data sources follow the data management and governance principles set out in the IPBES data and knowledge management policy in order to encourage open science. (Objective 3)\nTarget 2.6 – By 2027, monitor the use of and identify potential gaps in tools and methodologies for the delivery of IPBES products to decision makers. (Objectives 4 & 6)\nTarget 2.7 – By 2027, collect feedback from IPBES members and stakeholders, including Indigenous Peoples and local communities and policy makers, on the accessibility, quality and reach of IPBES products in order to improve their impact. (Objectives 5 & 6)\nTarget 2.8 – By 2030, create a technical platform capable of dynamically updating selected aspects of IPBES products according to the availability of new resources. (Objectives 1 & 3)\nTarget 2.9 – By 2030, develop a tracking system to map the use and citation of IPBES products in national, regional and global policies as well as in scientific publications. (Objectives 3 & 4)"
+  },
+  {
+    "objectID": "index.html#suggested-citation",
+    "href": "index.html#suggested-citation",
+    "title": "The IPBES long-term vision of data and knowledge management",
+    "section": "9 Suggested Citation",
+    "text": "9 Suggested Citation\nIPBES (2026): The IPBES long-term vision of data and knowledge management, version 2.0-rc.1, Rainer M Krug, Aidin Niamir (eds.). IPBES secretariat, Bonn, Germany. DOI: None (pre-release)"
+  }
+]
