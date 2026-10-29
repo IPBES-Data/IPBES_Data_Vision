@@ -30,3 +30,4 @@ jobs:
           github_token: ${{ github.token }}
           publish_dir: _site/admin
           destination_dir: admin
+          keep_files: true   # keeps latest-export.json written by the export workflow

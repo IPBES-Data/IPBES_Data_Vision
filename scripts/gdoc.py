@@ -2,13 +2,14 @@
 """Move the Vision text between Google Docs and this repository (Python stdlib + Pandoc).
 
   gdoc.py import <doc link or id>       Google Doc -> _content.md (+ media/) and the bibliographic fields in the .qmd
-  gdoc.py export [folder link or id]    bibliographic fields + _content.md -> a new Google Doc (default: My Drive)
+  gdoc.py export [folder] [version]     bibliographic fields + _content.md -> a new Google Doc (default folder:
+                                        My Drive); version (e.g. 1.1, default: current target) goes into the Doc
   gdoc.py login <client.json>           one-time sign-in; prints the GOOGLE_OAUTH secret on stdout
 
 Google Doc layout (export writes it, import reads it). Everything before the first heading is front matter:
   - a "Document information" table, one row per field (FIELDS below), value in the second column;
   - an "Editors" table with the columns Name | Institution | ORCID, one row per editor;
-  - anything else there (notes, table of contents) is ignored.
+  - anything else there (the "Based on version" line, notes, table of contents) is ignored.
 The text starts at the first Heading 1 that is not a table of contents.
 
 Auth: GOOGLE_OAUTH holds {"client_id", "client_secret", "refresh_token"} from `login`, so import and
@@ -29,6 +30,8 @@ import webbrowser
 from datetime import datetime, timezone
 from pathlib import Path
 
+import versions
+
 QMD = Path("IPBES_Data_Vision.qmd")
 CONTENT = Path("_content.md")
 MEDIA = Path("media")
@@ -37,13 +40,16 @@ GDOC = "application/vnd.google-apps.document"
 SCOPE = "https://www.googleapis.com/auth/drive"
 TOKEN_URL = "https://oauth2.googleapis.com/token"
 # Row label in the "Document information" table -> frontmatter key. All rows are required.
-FIELDS = {"Title": "title", "Produced by": "produced_by", "Publisher": "publisher", "Contact e-mail": "contact_email"}
+FIELDS = {"Title": "title", "Produced by": "produced_by", "Publisher": "publisher", "Contact e-mail": "contact_email",
+          "Version": "next_version"}
 EDITOR_COLUMNS = ["Name", "Institution", "ORCID"]
 ORCID = re.compile(r"\d{4}-\d{4}-\d{4}-\d{3}[\dX]")
 EMAIL = re.compile(r"[^@\s]+@[^@\s]+\.[^@\s]+")
 NOTE = ("Edit the two tables below to change the bibliographic information; add or delete rows in the Editors "
-        "table as needed. Do not rename the tables' first column. The text of the Vision starts at the first "
-        "heading; this part is not copied into it.")
+        "table as needed. Do not rename the tables' first column. Version is the version this text is being "
+        "prepared as: the next minor (e.g. 1.1) for wording, corrections, references or editors, or the next major "
+        "(e.g. 2.0) when aims, tracks, targets or the structure change; beta and release-candidate numbers are "
+        "added automatically. The text of the Vision starts at the first heading; this part is not copied into it.")
 
 
 def doc_id(link: str) -> str:
@@ -173,6 +179,7 @@ def import_docx(docx: bytes) -> None:
     if first is None:
         sys.exit("No headings found in the Google Doc; section titles must use the Heading 1/2/3 styles.")
     meta = read_front_matter(blocks[:first])
+    meta["next_version"] = versions.fmt(versions.check(meta["next_version"], versions.tags()))
     body = pandoc("-f", "json", "-t", "markdown-smart", "--wrap=none", stdin=json.dumps(dict(doc, blocks=blocks[first:])))
     CONTENT.write_text(clean_body(body).strip() + "\n")
     QMD.write_text(update_frontmatter(QMD.read_text(), meta))
@@ -185,11 +192,16 @@ def cell(value: str) -> str:
     return str(value or "").replace("|", "\\|")
 
 
-def export_docx() -> bytes:
+def export_docx(version: str = "") -> bytes:
+    """The Doc as .docx; `version` (e.g. "1.1") is what the text is prepared as, default: the current target."""
+    ts = versions.tags()
     with tempfile.TemporaryDirectory() as tmp:
         Path(tmp, "meta.txt").write_text("$meta-json$")
         meta = json.loads(pandoc(str(QMD), "-t", "plain", "--template", str(Path(tmp, "meta.txt"))))
-        front = [f"*{NOTE}*", "", "**Document information**", "", "| Field | Value |", "|---|---|"]
+        meta["next_version"] = versions.fmt(versions.check(version, ts) if version.strip() else versions.target(ts))
+        based_on = versions.based_on(ts)
+        front = [f"*Based on version {based_on} (for information; not imported).*", "", f"*{NOTE}*", "",
+                 "**Document information**", "", "| Field | Value |", "|---|---|"]
         front += [f"| {label} | {cell(meta.get(key))} |" for label, key in FIELDS.items()]
         front += ["", "**Editors**", "", "| " + " | ".join(EDITOR_COLUMNS) + " |", "|---|---|---|"]
         front += [f"| {cell(e.get('name'))} | {cell(e.get('institution'))} | {cell(e.get('orcid'))} |"
@@ -206,20 +218,26 @@ def cmd_import(link: str) -> None:
                      headers={"Authorization": f"Bearer {token}"}))
 
 
-def cmd_export(folder: str = "") -> None:
-    """Upload the export as a new Google Doc (Drive converts the .docx)."""
+def cmd_export(folder: str = "", version: str = "") -> None:
+    """Upload the export as a new Google Doc (Drive converts the .docx); record it in build/latest-export.json."""
+    ts = versions.tags()
+    version = versions.fmt(versions.check(version, ts) if version.strip() else versions.target(ts))
     stamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
-    metadata = {"name": f"IPBES Data Management Vision - export {stamp}", "mimeType": GDOC}
+    metadata = {"name": f"IPBES Data Management Vision {version} - export {stamp}", "mimeType": GDOC}
     if folder:
         metadata["parents"] = [doc_id(folder.replace("/folders/", "/d/"))]
     boundary = "vision-export-boundary"
     body = (f"--{boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n{json.dumps(metadata)}\r\n"
-            f"--{boundary}\r\nContent-Type: {DOCX}\r\n\r\n").encode() + export_docx() + f"\r\n--{boundary}--\r\n".encode()
+            f"--{boundary}\r\nContent-Type: {DOCX}\r\n\r\n").encode() + export_docx(version) + f"\r\n--{boundary}--\r\n".encode()
     token = access_token()
     created = json.loads(call("POST", "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart"
                                       "&supportsAllDrives=true", body,
                               {"Authorization": f"Bearer {token}", "Content-Type": f"multipart/related; boundary={boundary}"}))
-    print(f"Created {metadata['name']!r}: https://docs.google.com/document/d/{created['id']}/edit")
+    record = {"name": metadata["name"], "url": f"https://docs.google.com/document/d/{created['id']}/edit",
+              "version": version, "created": stamp}
+    Path("build").mkdir(exist_ok=True)
+    Path("build/latest-export.json").write_text(json.dumps(record, indent=2) + "\n")
+    print(f"Created {record['name']!r}: {record['url']}")
 
 
 def cmd_login(client_file: str) -> None:
@@ -263,4 +281,4 @@ if __name__ == "__main__":
     commands = {"import": cmd_import, "export": cmd_export, "login": cmd_login}
     if len(sys.argv) < 2 or sys.argv[1] not in commands or (sys.argv[1] != "export" and len(sys.argv) != 3):
         sys.exit(__doc__)
-    commands[sys.argv[1]](*sys.argv[2:3])
+    commands[sys.argv[1]](*sys.argv[2:4])

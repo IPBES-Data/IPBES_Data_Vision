@@ -1,0 +1,29 @@
+name: "Number accepted text changes (beta)"
+
+# Every change to the text or its bibliographic data that reaches main gets the next beta
+# version, e.g. v1.1-beta.3 (rules: admin.qmd, "Version rules"). Only a git tag: no PDF, no DOI.
+on:
+  push:
+    branches: [main]
+    paths: [_content.md, IPBES_Data_Vision.qmd, "media/**"]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release   # same group as the release workflows, so version numbers are handed out one at a time
+  cancel-in-progress: false
+
+jobs:
+  tag:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Tag the next beta version
+        run: |
+          tag=$(python3 scripts/versions.py beta)
+          git tag "$tag" && git push -q origin "$tag"
+          echo "### This change is version ${tag#v}" >> "$GITHUB_STEP_SUMMARY"

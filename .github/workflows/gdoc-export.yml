@@ -5,12 +5,19 @@ name: "Export text to Google Doc"
 on:
   workflow_dispatch:
     inputs:
+      version:
+        description: "Version this round of editing prepares (empty = keep the current one). Minor, e.g. 1.1: wording, corrections, references, editors. Major, e.g. 2.0: aims, tracks, targets or structure change."
+        required: false
       folder:
         description: "Google Drive folder link (leave empty for the usual folder)"
         required: false
 
 permissions:
-  contents: read
+  contents: write   # to publish the new Doc's link for the admin panel (gh-pages)
+
+concurrency:
+  group: release   # same group as the other workflows that push to gh-pages
+  cancel-in-progress: false
 
 jobs:
   export:
@@ -18,10 +25,24 @@ jobs:
     env:
       GOOGLE_OAUTH: ${{ secrets.GOOGLE_OAUTH }}
       FOLDER: ${{ inputs.folder || vars.GDRIVE_FOLDER_ID }}
+      VERSION: ${{ inputs.version }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # for "Based on version"
 
       - uses: quarto-dev/quarto-actions/setup@v2
 
       - name: Create the Google Doc
-        run: python3 scripts/gdoc.py export "$FOLDER" | tee -a "$GITHUB_STEP_SUMMARY"
+        run: |
+          set -o pipefail   # a failed export must fail the run
+          python3 scripts/gdoc.py export "$FOLDER" "$VERSION" | tee -a "$GITHUB_STEP_SUMMARY"
+          mkdir -p panel && cp build/latest-export.json panel/
+
+      - name: Show the new Doc on the admin panel
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ github.token }}
+          publish_dir: panel
+          destination_dir: admin
+          keep_files: true

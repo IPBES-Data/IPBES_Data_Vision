@@ -69,7 +69,7 @@ Drafts for review, archived on GitHub. **Pre-releases have no DOI and are not fo
   const repo = pre.dataset.repo;
   fill(pre,
     `https://api.github.com/repos/${repo}/releases?per_page=100`,
-    (list) => list.filter((r) => r.prerelease && !r.draft).map((r) => {
+    (list) => list.filter((r) => r.prerelease && !r.draft && !/-test\./.test(r.tag_name)).map((r) => {
       const pdf = r.assets.find((a) => /\.pdf$/i.test(a.name));
       return [r.tag_name.replace(/^v/, ""), (r.published_at || "").slice(0, 10),
               pdf ? link(pdf.browser_download_url, "PDF") : "-", link(r.html_url, "GitHub")];

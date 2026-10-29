@@ -11,23 +11,26 @@ execute:
 ```{=html}
 <div id="panel" data-repo="IPBES-Data/IPBES_Data_Vision">
 
+<p class="versions" id="versions"></p>
+<p class="versions" id="latest-export"></p>
+
 <div class="grid">
   <div class="card">
     <h3>1. Import</h3>
     <p>Bring in the edits from the Google Doc.</p>
-    <a class="btn" data-workflow="gdoc-import.yml" title="Copies the text and the Document information and Editors tables from the Google Doc. Opens a page listing every change; Merge it to accept, Close it to discard. The website does not change. Form: Doc link (empty = usual Doc).">Import from Google Doc</a>
+    <a class="btn" data-workflow="gdoc-import.yml" title="Copies the text and the Document information and Editors tables from the Google Doc. Opens a page listing every change; Merge it to accept (it then gets the next beta number, e.g. 1.1-beta.3), Close it to discard. The website does not change. Form: Doc link (empty = usual Doc).">Import from Google Doc</a>
     <p class="status" data-status="gdoc-import.yml"></p>
   </div>
   <div class="card">
     <h3>2. Export</h3>
     <p>New Google Doc with the current text.</p>
-    <a class="btn" data-workflow="gdoc-export.yml" title="Creates a new Google Doc in your Drive with the current text and the bibliographic tables. Existing Docs are not changed. The new Doc's link is shown under the run's details. Form: Drive folder (empty = usual folder).">Export to Google Doc</a>
+    <a class="btn" data-workflow="gdoc-export.yml" title="Creates a new Google Doc in your Drive with the current text and the bibliographic tables. Existing Docs are not changed. The new Doc's link is shown under the run's details. Form: the version this round of editing prepares (empty = keep the current one): minor, e.g. 1.1, for wording, corrections, references or editors; major, e.g. 2.0, when aims, tracks, targets or the structure change. And the Drive folder (empty = usual folder).">Export to Google Doc</a>
     <p class="status" data-status="gdoc-export.yml"></p>
   </div>
   <div class="card">
     <h3>3. Release</h3>
     <p>Pre-release (review) or release (DOI).</p>
-    <a class="btn" data-workflow="release.yml" title="Pre-release: a draft for review, no DOI, shown at the Pre-release preview. Release: a citable version; reserves a DOI and prepares a Zenodo draft, but nothing is public until Publish. Form: type, version (e.g. 1.2), what changed (separate items with ;).">Make a release or pre-release</a>
+    <a class="btn" data-workflow="release.yml" title="Pre-release: the next release candidate (e.g. 1.1-rc.2) for review; no DOI; shown at the Pre-release preview. Release: publishes the latest release candidate unchanged as the final version (e.g. 1.1); reserves a DOI and prepares a Zenodo draft, but nothing is public until Publish. Refused if the text changed since that candidate. Form: type, what changed (separate items with ;).">Make a release or pre-release</a>
     <p class="status" data-status="release.yml"></p>
   </div>
   <div class="card">
@@ -62,6 +65,7 @@ execute:
 #panel .card p.status { color: #555; font-size: 0.85rem; }
 #panel .waiting { background: #fff6d6; border-radius: 6px; padding: 0.5rem 0.75rem; margin: 0 0 0.5rem; }
 #panel .links { font-size: 0.9rem; }
+#panel .versions { margin: 0.25rem 0 0; }
 #panel .hint { font-size: 0.9rem; background: #eef4fb; border-radius: 6px; padding: 0.5rem 0.75rem; }
 </style>
 
@@ -93,6 +97,32 @@ execute:
     const imports = (pulls || []).filter((p) => p.head.ref.startsWith("google-doc-import-"));
     if (imports.length) notice(`Import waiting for review (step 1): ${imports.map((p) => link(p.html_url, p.title)).join(", ")}`);
   });
+  // Link to the newest Google Doc made by "Export to Google Doc" (written next to this page by that workflow).
+  fetch("latest-export.json", { cache: "no-store" }).then((r) => (r.ok ? r.json() : null)).then((e) => {
+    if (e) document.getElementById("latest-export").innerHTML =
+      `Latest Google Doc export: ${link(e.url, e.name)} (version ${e.version})`;
+  }).catch(() => {});
+
+  // Current versions, from the tags and next_version in the frontmatter (same rules as scripts/versions.py).
+  Promise.all([api("/tags?per_page=100"),
+               fetch(`https://raw.githubusercontent.com/${repo}/main/IPBES_Data_Vision.qmd`).then((r) => (r.ok ? r.text() : ""))])
+  .then(([list, qmd]) => {
+    const ts = (list || []).map((t) => t.name.match(/^v(\d+)\.(\d+)(?:-(beta|rc|test)\.(\d+))?$/)).filter(Boolean)
+      .map((m) => ({ v: [+m[1], +m[2]], kind: m[3] || null, n: +(m[4] || 0) }));
+    const cmp = (a, b) => a[0] - b[0] || a[1] - b[1];
+    const highest = (vs, start) => vs.reduce((x, y) => (cmp(y, x) > 0 ? y : x), start);
+    const released = highest(ts.filter((t) => !t.kind).map((t) => t.v), [1, 0]);
+    const allowed = [[released[0], released[1] + 1], [released[0] + 1, 0]];
+    const m = qmd.match(/^next_version:\s*"?v?(\d+)\.(\d+)/m);
+    const declared = m ? [+m[1], +m[2]] : null;
+    const target = declared && allowed.some((a) => cmp(a, declared) === 0) ? declared : allowed[0];
+    const last = (kind) => Math.max(0, ...ts.filter((t) => t.kind === kind && cmp(t.v, target) === 0).map((t) => t.n));
+    const v = (x) => x.join(".");
+    document.getElementById("versions").innerHTML = `Latest release: <b>${v(released)}</b> · Working towards <b>${v(target)}</b>` +
+      (last("rc") ? ` · latest pre-release ${v(target)}-rc.${last("rc")}` : " · no pre-release yet") +
+      (last("beta") ? ` · latest accepted change ${v(target)}-beta.${last("beta")}` : "");
+  });
+
   api("/releases?per_page=20").then((releases) => {
     const pending = (releases || []).filter((r) => !r.prerelease && /^DOI reserved:/m.test(r.body || ""));
     if (pending.length) notice(`Release ready to publish (step 4): ${pending.map((r) => link(r.html_url, r.tag_name)).join(", ")}`);
@@ -105,14 +135,34 @@ You need to be signed in to GitHub with an account that may edit this repository
 
 ## What the buttons do
 
-1. **Import from Google Doc** copies the text and the bibliographic tables from the Google Doc. Nothing changes on the website yet: you get a page showing every change, where you accept (**Merge**) or discard (**Close**) it. The form takes a Doc link; leave it empty for the usual Doc.
-2. **Export to Google Doc** creates a **new** Google Doc in your Drive with the current text and the bibliographic tables; its link is shown under the run's *details*. Existing Docs are never changed. Paste the new Doc's link into the import form later (or ask the technical admin to make it the usual Doc).
-3. **Make a release or pre-release** asks for the type, the version number (e.g. `1.2`) and what changed (items separated by `;`).
-   - **Pre-release**: a draft for review. No DOI, archived on GitHub, shown at the *Pre-release preview* link.
-   - **Release**: a citable version. A DOI is reserved and a Zenodo draft prepared, but nothing is public until step 4.
+1. **Import from Google Doc** copies the text and the bibliographic tables from the Google Doc. Nothing changes on the website yet: you get a page showing every change, where you accept (**Merge**) or discard (**Close**) it. An accepted import gets the next beta number. The form takes a Doc link; leave it empty for the usual Doc.
+2. **Export to Google Doc** asks which version this round of editing prepares (e.g. `1.1` for a minor or `2.0` for a major change; empty keeps the current one) and creates a **new** Google Doc in your Drive with the current text and the bibliographic tables, including that version; its link is shown under the run's *details*. Existing Docs are never changed. Paste the new Doc's link into the import form later (or ask the technical admin to make it the usual Doc).
+3. **Make a release or pre-release** asks for the type and what changed (items separated by `;`). There is no version number to type: it follows the rules below.
+   - **Pre-release**: the next release candidate, e.g. `1.1-rc.2`. No DOI, archived on GitHub, shown at the *Pre-release preview* link.
+   - **Release**: the latest release candidate, unchanged, becomes the final version, e.g. `1.1-rc.2` → `1.1`. A DOI is reserved and a Zenodo draft prepared, but nothing is public until step 4. If the text changed after that candidate, make a new pre-release first.
 4. **Publish release**: after a release in step 3, check the Zenodo draft and the PDF, then publish. This makes the DOI permanent and updates the website. Leave the form empty to publish the newest release.
 
 This panel is always at <https://ipbes-data.github.io/IPBES_Data_Vision/admin/> and is updated whenever the repository changes.
+
+## Version rules
+
+Released versions are `MAJOR.MINOR` (`1.0`, `1.1`, `2.0`); work in progress carries a suffix (`1.1-beta.3`, `1.1-rc.2`). A *cycle* is the work between two releases; the line above the buttons shows the current one.
+
+| Step | Version |
+|---|---|
+| Import (or other change to the text) accepted | next **beta**, e.g. `1.1-beta.3`: only recorded, no PDF, no DOI |
+| Export | asks for the version being prepared (`1.1` or `2.0`), which goes into the Doc's *Version* row; the Doc also shows "Based on version …" |
+| Pre-release | next **release candidate**, e.g. `1.1-rc.2`: PDF on GitHub, preview site, no DOI |
+| Release + Publish | the latest release candidate **unchanged** becomes `1.1`, with a DOI |
+
+- **Minor or major is decided at export**: you type only the `MAJOR.MINOR` part, and it must be the next minor (`1.0 → 1.1`) or the next major (`1.0 → 2.0`) version. It is written into the Google Doc's *Version* row, can be corrected there, and takes effect when the import is accepted. The `-beta.N` / `-rc.N` part is always added automatically. Until a version is chosen, the next minor is assumed.
+- **Which one?**
+  - **Minor** (`1.0 → 1.1`): the same content, better expressed or updated — wording, clarifications, corrections, updated references or names, changes to editors, contact or publisher.
+  - **Major** (`1.0 → 2.0`): what the Vision says or commits to changes — aims, tracks or targets (including their dates) added, removed or substantially changed, the document restructured, or changes following a new Plenary decision. Rule of thumb: would someone citing the previous version need to know that the substance changed?
+- Beta and release-candidate numbers start at 1 for each new version; betas keep counting after a release candidate.
+- A release always publishes a release candidate exactly as it was reviewed; if the text changed since, make a new pre-release first. Released numbers only go up.
+- While `ZENODO_TARGET` is `sandbox`, releases are test releases tagged `1.1-test.N`; they are not versions and do not end the cycle.
+- The numbers are git tags (`v1.1-beta.3`, …), handed out by `scripts/versions.py`.
 
 ## One-time setup (for the technical admin)
 
@@ -138,7 +188,7 @@ People who use the panel need *Write* access to the repository.
 Import and export act as **one Google account** (yours, or a dedicated one): they can read every Doc that account can open, and exports are new Docs owned by it, using its normal Drive storage. Set up once, on a computer with Python:
 
 1. In the [Google Cloud console](https://console.cloud.google.com/), signed in with that account, create a project and enable the **Google Drive API**. No billing is needed.
-2. *Google Auth Platform → Branding*: give the app a name (e.g. "IPBES Vision sync") and your e-mail. *Audience*: user type **External**, then **Publish app** (status "In production"). In "Testing" status Google ends the sign-in after 7 days.
+2. *Google Auth Platform → Branding* (German: *Branding*): app name (e.g. "IPBES Vision"), support e-mail and developer contact e-mail, plus — required for publishing — **App home page** `https://ipbes-data.github.io/IPBES_Data_Vision/admin/`, **Privacy policy link** `https://ipbes-data.github.io/IPBES_Data_Vision/admin/#privacy` and **Authorized domain** `ipbes-data.github.io`; save. Then *Audience* (*Zielgruppe*): user type **External**, then **Publish app** (*App veröffentlichen*); the status must read "In production" (*In Produktion*). In "Testing" status only listed test users can sign in, and Google ends the sign-in after 7 days.
 3. *Clients → Create client*, type **Desktop app**; download the JSON file (e.g. `client.json`).
 4. In this repository run, with the [GitHub CLI](https://cli.github.com/) signed in:
 

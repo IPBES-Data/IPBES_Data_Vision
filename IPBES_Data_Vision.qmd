@@ -2,8 +2,10 @@
 title: "The IPBES long-term vision of data and knowledge management"
 subtitle: "Version {{< meta version >}} · {{< meta release_date >}}"
 # Version, release date, release notes and DOI are not stored here: scripts/release.py
-# adds them from the release form. title, produced_by, publisher, contact_email and
-# editors are updated by the Google Doc import; the text itself is in _content.md.
+# adds them from the release form. title, produced_by, publisher, contact_email, editors
+# and next_version (the version this text is prepared as, chosen at export) are updated
+# by the Google Doc import; the text itself is in _content.md.
+next_version: "2.0"
 produced_by: "IPBES task force on knowledge and data"
 publisher: "IPBES secretariat, Bonn, Germany"
 contact_email: "tsu.data@ipbes.net"
@@ -17,8 +19,8 @@ editors:
 zenodo:
   concept_doi: "10.5281/zenodo.5513473"          # production "all versions" DOI
   sandbox_concept_doi: "10.5072/zenodo.472195"   # used when ZENODO_TARGET=sandbox
-  access_right: "open"
-  license: "cc-by-4.0"
+  access_right: "closed"     # open | closed | restricted; closed for now (decision 2026-10-29)
+  license: "cc-by-4.0"       # applied by Zenodo when access_right is open
 format:
   html:
     output-file: index.html
