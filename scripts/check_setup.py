@@ -152,7 +152,8 @@ def check_github() -> None:
         allowed = body.get("can_approve_pull_request_reviews")
         report(OK if allowed else FAIL, "Workflows may open pull requests",
                "Yes." if allowed else "No: the import cannot open its review page. Settings → Actions → General → "
-               "tick 'Allow GitHub Actions to create and approve pull requests'.")
+               "tick 'Allow GitHub Actions to create and approve pull requests' (an organisation owner must "
+               "allow it for IPBES-Data first).")
     else:
         report(WARN, "Workflows may open pull requests", "Could not check with the workflow's token; see Settings → "
                "Actions → General → 'Allow GitHub Actions to create and approve pull requests'.")
