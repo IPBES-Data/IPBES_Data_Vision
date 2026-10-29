@@ -2,17 +2,23 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
 
 <meta charset="utf-8">
-<meta name="generator" content="quarto-1.8.27">
+<meta name="generator" content="quarto-1.10.19">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
 <title>All Releases – IPBES Data Management Vision</title>
 <style>
-code{white-space: pre-wrap;}
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
 span.smallcaps{font-variant: small-caps;}
-div.columns{display: flex; gap: min(4vw, 1.5em);}
-div.column{flex: auto; overflow-x: auto;}
+div.columns{display: flex; gap: 1.5em;}
+div.column{flex: auto;}
+@media screen {
+div.columns{gap: min(4vw, 1.5em);}
+div.column{overflow-x: auto;}
+}
 div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
 ul.task-list{list-style: none;}
 ul.task-list li input[type="checkbox"] {
@@ -31,15 +37,14 @@ ul.task-list li input[type="checkbox"] {
 <meta name="quarto:offset" content="./">
 <script src="site_libs/quarto-html/quarto.js" type="module"></script>
 <script src="site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
-<script src="site_libs/quarto-html/axe/axe-check.js" type="module"></script>
 <script src="site_libs/quarto-html/popper.min.js"></script>
 <script src="site_libs/quarto-html/tippy.umd.min.js"></script>
 <script src="site_libs/quarto-html/anchor.min.js"></script>
 <link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="site_libs/quarto-html/quarto-syntax-highlighting-ed96de9b727972fe78a7b5d16c58bf87.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting-bf27225e3a48a9273f3daa8f8e829971.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="site_libs/bootstrap/bootstrap-9195fa1a9c736cb8c2994c5df3058328.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="site_libs/bootstrap/bootstrap-ba8f7c244c1f50cbf6c6a3aa3874339a.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "sidebar",
   "copy-button": false,
@@ -104,43 +109,73 @@ ul.task-list li input[type="checkbox"] {
 <p>
 <a href="index.html">Vision</a> | <a href="older-releases.html">All Releases</a> | <a href="assets/IPBES-Data-Management-Vision-latest.pdf" target="_blank" rel="noopener noreferrer">Latest PDF</a>
 </p>
-<section id="all-releases" class="level2">
-<h2 class="anchored" data-anchor-id="all-releases">All Releases</h2>
-<p>This page lists published versions directly from Zenodo using the concept DOI.</p>
-<p>Concept DOI: <a href="https://doi.org/10.5072/zenodo.472195">10.5072/zenodo.472195</a></p>
+<section id="releases" class="level2">
+<h2 class="anchored" data-anchor-id="releases">Releases</h2>
+<p>Citable versions with a DOI, read live from Zenodo. Concept DOI (always the latest version): <a href="https://doi.org/10.5281/zenodo.5513473">10.5281/zenodo.5513473</a></p>
+<div id="releases" data-concept-doi="10.5281/zenodo.5513473">
+<p>
+Loading releases from Zenodo…
+</p>
+</div>
+</section>
+<section id="pre-releases" class="level2">
+<h2 class="anchored" data-anchor-id="pre-releases">Pre-releases</h2>
+<p>Drafts for review, archived on GitHub. <strong>Pre-releases have no DOI and are not for citation.</strong></p>
+<div id="pre-releases" data-repo="IPBES-Data/IPBES_Data_Vision">
+<p>
+Loading pre-releases from GitHub…
+</p>
+</div>
 <style>
-#all-releases table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 0.75rem;
-}
-
-#all-releases thead th {
-  text-align: left;
-  font-weight: 700;
-  padding: 0.55rem 1rem 0.55rem 0;
-  border-bottom: 2px solid #d7dee6;
-  white-space: nowrap;
-}
-
-#all-releases tbody td {
-  padding: 0.6rem 1rem 0.6rem 0;
-  border-bottom: 1px solid #e7ebef;
-  vertical-align: top;
-}
-
-#all-releases tbody tr:last-child td {
-  border-bottom: 0;
-}
-
-#all-releases tbody td:nth-child(1),
-#all-releases tbody td:nth-child(2),
-#all-releases tbody td:nth-child(4),
-#all-releases tbody td:nth-child(5) {
-  white-space: nowrap;
-}
+#releases table, #pre-releases table { width: 100%; border-collapse: collapse; margin-top: 0.75rem; }
+#releases th, #pre-releases th { text-align: left; padding: 0.55rem 1rem 0.55rem 0; border-bottom: 2px solid #d7dee6; }
+#releases td, #pre-releases td { padding: 0.6rem 1rem 0.6rem 0; border-bottom: 1px solid #e7ebef; white-space: nowrap; }
 </style>
-<p>Could not resolve release history during render (No release records found for this concept DOI.). See Zenodo concept page: <a href="https://doi.org/10.5072/zenodo.472195">10.5072/zenodo.472195</a></p>
+<script>
+(() => {
+  const link = (href, text) => `<a href="${href}" target="_blank" rel="noopener noreferrer">${text}</a>`;
+
+  // Fill box with a table built from fetch(url) → rows; on failure show fallback(message).
+  const fill = async (box, url, toRows, header, fallback) => {
+    try {
+      const response = await fetch(url);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const rows = toRows(await response.json());
+      if (!rows.length) throw new Error("none published yet");
+      box.innerHTML = `<table><thead><tr>${header.map((h) => `<th>${h}</th>`).join("")}</tr></thead>` +
+        `<tbody>${rows.map((r) => `<tr>${r.map((c) => `<td>${c}</td>`).join("")}</tr>`).join("")}</tbody></table>`;
+    } catch (error) {
+      box.innerHTML = fallback(error.message);
+    }
+  };
+
+  const releases = document.getElementById("releases");
+  const conceptDoi = releases.dataset.conceptDoi;
+  // ponytail: one page of 25 (Zenodo's anonymous maximum); add paging past 25 versions.
+  fill(releases,
+    `https://zenodo.org/api/records?q=conceptrecid:${conceptDoi.match(/(\d+)$/)[1]}&all_versions=true&sort=mostrecent&size=25`,
+    (json) => json.hits.hits.map((r) => {
+      const pdf = (r.files || []).find((f) => /\.pdf$/i.test(f.key));
+      return [r.metadata.version || "-", r.metadata.publication_date, link(`https://doi.org/${r.doi}`, r.doi),
+              pdf ? link(pdf.links.self, "PDF") : "-", link(r.links.self_html, "Record")];
+    }),
+    ["Version", "Release date", "DOI", "Download", "Zenodo"],
+    (msg) => `<p>Could not load releases (${msg}). See all versions on Zenodo: ` +
+      `${link(`https://doi.org/${conceptDoi}`, conceptDoi)}</p>`);
+
+  const pre = document.getElementById("pre-releases");
+  const repo = pre.dataset.repo;
+  fill(pre,
+    `https://api.github.com/repos/${repo}/releases?per_page=100`,
+    (list) => list.filter((r) => r.prerelease && !r.draft && !/-test\./.test(r.tag_name)).map((r) => {
+      const pdf = r.assets.find((a) => /\.pdf$/i.test(a.name));
+      return [r.tag_name.replace(/^v/, ""), (r.published_at || "").slice(0, 10),
+              pdf ? link(pdf.browser_download_url, "PDF") : "-", link(r.html_url, "GitHub")];
+    }),
+    ["Version", "Date", "Download", "Release notes"],
+    (msg) => `<p>No pre-releases listed (${msg}). See ${link(`https://github.com/${repo}/releases`, "GitHub releases")}.</p>`);
+})();
+</script>
 
 
 </section>
