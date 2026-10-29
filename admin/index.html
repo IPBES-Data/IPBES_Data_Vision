@@ -5535,9 +5535,9 @@ color: #1f6f43; cursor: pointer; }
   E --&gt; D[&quot;Edit in the Google Doc&quot;]
   D --&gt; I[&quot;2. Import from Google Doc&lt;br/&gt;review page: Merge&quot;]
   I --&gt; B[&quot;beta: 2.0-beta.N&lt;br/&gt;(automatic, not published)&quot;]
-  B --&gt;|more edits| D
+  B --&gt;|more edits: export again| E
   B --&gt; P[&quot;3. Pre-release&lt;br/&gt;release candidate 2.0-rc.N&lt;br/&gt;PDF + /preview/, no DOI&quot;]
-  P --&gt;|changes needed| D
+  P --&gt;|changes needed: export again| E
   P --&gt; RL[&quot;4. Release&lt;br/&gt;2.0-rc.N becomes 2.0&lt;br/&gt;DOI reserved, Zenodo draft&quot;]
   RL --&gt; PB[&quot;5. Publish release&lt;br/&gt;DOI minted, website shows 2.0&quot;]
   PB --&gt; E2[&quot;Next export: target 2.1 or 3.0&lt;br/&gt;next betas: 2.1-beta.1, ...&quot;]
@@ -5599,14 +5599,14 @@ color: #1f6f43; cursor: pointer; }
 <section id="bring-edits-back-a-beta" class="level3">
 <h3 class="anchored" data-anchor-id="bring-edits-back-a-beta">2. Bring edits back: a beta</h3>
 <p>When the editing round is done, click <strong>Import from Google Doc</strong> (form empty = the latest exported Doc). You get a review page listing every change; click <strong>Merge</strong> to accept, <strong>Close</strong> to discard. The Doc is marked “IMPORTED” and locked.</p>
-<p>Accepting gives the text the <strong>next beta number automatically</strong>: the next import after 2.0-beta.4 becomes <strong>2.0-beta.5</strong>. Betas are only recorded: no PDF, no website, no DOI. Changes to the page layout in the repository also count as betas (that is how 2.0-beta.2 to 2.0-beta.4 came about). Repeat export → edit → import as often as needed; the target stays 2.0.</p>
+<p>Accepting gives the text the <strong>next beta number automatically</strong>: the next import after 2.0-beta.4 becomes <strong>2.0-beta.5</strong>. Betas are only recorded: no PDF, no website, no DOI. Changes to the page layout in the repository also count as betas (that is how 2.0-beta.2 to 2.0-beta.4 came about). For more edits, export again: the imported Doc is locked, and each round starts with a fresh export. Repeat export → edit → import as often as needed; the target stays 2.0.</p>
 </section>
 <section id="publish-for-review-a-release-candidate" class="level3">
 <h3 class="anchored" data-anchor-id="publish-for-review-a-release-candidate">3. Publish for review: a release candidate</h3>
 <p>When the text is ready for review, click <strong>Make a release or pre-release</strong>, choose <strong>Pre-release (for review, no DOI)</strong> and write what changed (items separated by <code>;</code>). The text becomes the next <strong>release candidate</strong>: the first one for 2.0 is <strong>2.0-rc.1</strong>.</p>
 <ul>
 <li>The PDF and release notes appear as a GitHub pre-release, the website version at the <strong>Pre-release</strong> button (<code>/preview/</code>), with the amber banner “for review, not for citation”.</li>
-<li>If the review asks for changes: edit, export/import as in steps 1–2 (giving 2.0-beta.6, …), then make another pre-release: <strong>2.0-rc.2</strong>.</li>
+<li>If the review asks for changes: export again (step 1; the imported Doc is locked), edit the new Doc and import it (step 2, giving 2.0-beta.6, …), then make another pre-release: <strong>2.0-rc.2</strong>.</li>
 <li>A pre-release is refused if nothing has changed since the last one.</li>
 </ul>
 </section>
