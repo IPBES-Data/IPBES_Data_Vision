@@ -76,7 +76,8 @@ doi_html <- if (nzchar(doi)) sprintf('<a href="https://doi.org/%s">%s</a>', doi,
   if (nzchar(release("prerelease"))) "none (pre-release)" else "none (draft)"
 banner <- if (nzchar(release("prerelease"))) {
   c("prerelease", "exclamation-triangle", sprintf(
-    "<b>Pre-release %s</b> &middot; for review, not for citation &middot; the current released version is %s", version, current_link))
+    "<b>%s %s</b> &middot; for review, not for citation &middot; the current released version is %s",
+    if (grepl("-beta\\.", version)) "Beta" else "Pre-release", version, current_link))
 } else if (nzchar(doi)) {
   c("release", "check-circle", sprintf("<b>Version %s</b> &middot; released %s &middot; cite it with DOI %s", version, release_date, doi_html))
 } else {

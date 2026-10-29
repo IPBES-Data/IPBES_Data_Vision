@@ -5,21 +5,25 @@ project:
     - older-releases.qmd
     - v1.0.qmd
   resources:
-    - logos/ipbes.png
+    - logos/ipbes-data.jpg
 
 website:
   title: "IPBES Data Management Vision"
   navbar:
+    pinned: true   # stays at the top while scrolling
     background: light
-    logo: logos/ipbes.png
-    logo-alt: "IPBES"
+    logo: logos/ipbes-data.jpg
+    logo-alt: "IPBES-Data"
     right:
       - text: "The Vision"
         icon: book
-        href: index.html
+        href: https://ipbes-data.github.io/IPBES_Data_Vision/   # always the main site, also from the preview
       - text: "All versions"
         icon: clock-history
         href: older-releases.html
+      - text: "Pre-release"
+        icon: eye
+        href: https://ipbes-data.github.io/IPBES_Data_Vision/preview/
       - text: "Download PDF"
         icon: download
         href: assets/IPBES-Data-Management-Vision-latest.pdf
@@ -31,7 +35,7 @@ website:
 format:
   html:
     css: styles.css
-    include-after-body: pdf-link.html
+    include-after-body: nav-links.html
 
 execute:
   echo: false

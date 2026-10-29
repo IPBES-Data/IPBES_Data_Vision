@@ -1,0 +1,11 @@
+<script>
+// Hide header buttons whose target does not exist on this site: the PDF (e.g. the main site before 2.0) and the
+// pre-release preview (none since the last release). Mark the pre-release button active on the preview itself.
+const hideIfMissing = (selector, page = "") => document.querySelectorAll(selector).forEach((a) =>
+  fetch(a.href + page, { method: "HEAD" }).then((r) => { if (!r.ok) a.closest("li").style.display = "none"; })
+    .catch(() => {}));
+hideIfMissing('a[href$="IPBES-Data-Management-Vision-latest.pdf"]');
+hideIfMissing('a[href$="/preview/"]', "index.html");
+if (location.pathname.includes("/preview/"))
+  document.querySelectorAll('a[href$="/preview/"]').forEach((a) => a.classList.add("active"));
+</script>
