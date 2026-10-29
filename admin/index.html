@@ -5363,6 +5363,8 @@ z-index: 1000;
 
 <p class="hint">ℹ️ A button opens the task on GitHub (sign in if asked). There, click <b>Run workflow</b> on the right, fill in the form and click the green <b>Run workflow</b> button. Nothing happens until you do. Hover over a button for details.</p>
 
+<p class="setup"><a class="btn-small" data-workflow="check-setup.yml" title="Checks that the Google sign-in, the Zenodo tokens, the variables and the GitHub settings are in place, and lists anything to fix. Read-only: changes nothing. Form: nothing to fill in." href>Check setup</a> <span class="status" data-status="check-setup.yml"></span> · <a href="#setup">Setup how-to</a></p>
+
 <div id="waiting"></div>
 
 <p class="links"><a href="../">Website</a> · <a href="../preview/">Pre-release preview</a> · <a href="../older-releases.html">All releases</a> · <a data-href="/releases" href>GitHub releases</a> · <a data-href="/pulls" href>Changes waiting for review</a> · <a href="https://zenodo.org/me/uploads">Zenodo</a> · <a href="https://sandbox.zenodo.org/me/uploads">Zenodo sandbox</a></p>
@@ -5384,6 +5386,10 @@ border-radius: 6px; text-decoration: none; font-weight: 600; }
 #panel .card p.status { color: #555; font-size: 0.85rem; }
 #panel .waiting { background: #fff6d6; border-radius: 6px; padding: 0.5rem 0.75rem; margin: 0 0 0.5rem; }
 #panel .links { font-size: 0.9rem; }
+#panel .setup { font-size: 0.9rem; }
+#panel .btn-small { border: 1px solid #1f6f43; border-radius: 6px; color: #1f6f43; padding: 0.2rem 0.7rem; text-decoration: none; }
+#panel .btn-small:hover { background: #e8f2ec; }
+#panel .setup .status { color: #555; margin-left: 0.5rem; }
 #panel .versions { margin: 0.25rem 0 0; }
 #panel .copy { font-size: 0.85rem; padding: 0 0.5rem; border: 1px solid #1f6f43; border-radius: 4px; background: #fff;
 color: #1f6f43; cursor: pointer; }
@@ -5402,7 +5408,7 @@ color: #1f6f43; cursor: pointer; }
 
   document.querySelectorAll("[data-workflow]").forEach((a) => { a.href = `${gh}/actions/workflows/${a.dataset.workflow}`; });
   document.querySelectorAll("[data-href]").forEach((a) => { a.href = gh + a.dataset.href; });
-  document.querySelectorAll("#panel a").forEach((a) => { a.target = "_blank"; a.rel = "noopener noreferrer"; });
+  document.querySelectorAll('#panel a:not([href^="#"])').forEach((a) => { a.target = "_blank"; a.rel = "noopener noreferrer"; });
 
   // Last run of each task.
   document.querySelectorAll("[data-status]").forEach(async (p) => {
@@ -5455,7 +5461,7 @@ color: #1f6f43; cursor: pointer; }
   });
 })();
 </script>
-<p>You need to be signed in to GitHub with an account that may edit this repository. Each task takes a few minutes; its status appears above (reload the page).</p>
+<p><strong>Check setup</strong> (below the buttons) checks the secrets, variables and the Google, Zenodo and GitHub settings and lists anything to fix in the run’s details; it changes nothing. You need to be signed in to GitHub with an account that may edit this repository. Each task takes a few minutes; its status appears above (reload the page).</p>
 <section id="what-the-buttons-do" class="level2">
 <h2 class="anchored" data-anchor-id="what-the-buttons-do">What the buttons do</h2>
 <ol type="1">
@@ -5628,75 +5634,172 @@ color: #1f6f43; cursor: pointer; }
 <p>After 2.0 is published, the next export offers <strong>2.1</strong> (minor) or <strong>3.0</strong> (major). Accepted edits then count as <strong>2.1-beta.1</strong>, <strong>2.1-beta.2</strong>, …, the first pre-release becomes <strong>2.1-rc.1</strong>, and its release <strong>2.1</strong>. Beta and release-candidate numbers always start again at 1 for each new version.</p>
 </section>
 </section>
-<section id="one-time-setup-for-the-technical-admin" class="level2">
-<h2 class="anchored" data-anchor-id="one-time-setup-for-the-technical-admin">One-time setup (for the technical admin)</h2>
-<section id="github" class="level3">
-<h3 class="anchored" data-anchor-id="github">GitHub</h3>
-<p><em>Settings → Actions → General</em>: under <em>Workflow permissions</em> tick <strong>Allow GitHub Actions to create and approve pull requests</strong> (needed by the import). GitHub Pages must serve the <code>gh-pages</code> branch.</p>
-<p><em>Settings → Secrets and variables → Actions</em>:</p>
+<section id="setup" class="level2">
+<h2 class="anchored" data-anchor-id="setup">Admin how-to: setting everything up</h2>
+<p>This is the complete setup, in order. Most of it is done once; the <em>Maintenance</em> part lists what recurs. When you are done — and whenever something does not work — click <strong>Check setup</strong> on the panel: its run’s <em>details</em> list every item as ✅ / ⚠️ / ❌ with what to fix.</p>
+<p><strong>You need</strong></p>
+<ul>
+<li>a GitHub account with <em>Admin</em> rights on this repository;</li>
+<li>the Zenodo accounts (sandbox and production) that own the Vision’s records;</li>
+<li>a Google account that will own the exported Docs (a free account is fine; <code>IPBES.Vision@krugs.de</code> at the moment);</li>
+<li>for one step (the Google sign-in), a computer with Python 3 and the <a href="https://cli.github.com/">GitHub CLI</a> signed in (<code>gh auth login</code>), in a copy of this repository.</li>
+</ul>
+<section id="github-settings" class="level3">
+<h3 class="anchored" data-anchor-id="github-settings">1. GitHub settings</h3>
+<ol type="1">
+<li><em>Settings → Pages</em>: <em>Deploy from a branch</em>, branch <strong><code>gh-pages</code></strong>, folder <code>/ (root)</code>.</li>
+<li><em>Settings → Actions → General → Workflow permissions</em>: tick <strong>Allow GitHub Actions to create and approve pull requests</strong> (the import opens its review page this way).</li>
+<li><em>Settings → General → Pull Requests</em>: <strong>Allow auto-merge</strong> (optional; lets a pull request merge itself once its check passes).</li>
+<li><em>Settings → Branches</em>: <code>main</code> requires the status check <strong><code>build</code></strong> (“Check website and PDF build”), so nothing broken reaches the website.</li>
+<li><em>Settings → Collaborators</em>: everyone who uses the panel needs <strong>Write</strong> access.</li>
+</ol>
+</section>
+<section id="zenodo" class="level3">
+<h3 class="anchored" data-anchor-id="zenodo">2. Zenodo</h3>
+<p>Zenodo has two separate systems: <strong>sandbox</strong> (sandbox.zenodo.org, for tests, DOIs <code>10.5072/…</code>) and <strong>production</strong> (zenodo.org, real DOIs <code>10.5281/…</code>). Each needs:</p>
+<ol type="1">
+<li><p><strong>A first record, published by hand</strong>, whose <em>concept DOI</em> (“all versions” DOI) goes into the frontmatter of <code>IPBES_Data_Vision.qmd</code>: <code>zenodo.concept_doi</code> (production; now <code>10.5281/zenodo.5513473</code>, version 1.0) and <code>zenodo.sandbox_concept_doi</code> (now <code>10.5072/zenodo.472195</code>). Releases create new versions of these records.</p></li>
+<li><p><strong>A personal access token of the account that owns that record</strong>: Zenodo → your name (top right) → <em>Applications</em> → <em>Personal access tokens</em> → <em>New token</em>, scopes <strong><code>deposit:write</code></strong> and <strong><code>deposit:actions</code></strong>. The token is shown only once.</p></li>
+<li><p><strong>Store the tokens as secrets</strong> (<em>Settings → Secrets and variables → Actions → New repository secret</em>, or on the command line, which asks for the value):</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">gh</span> secret set ZENODO_TOKEN            <span class="co"># production token</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="ex">gh</span> secret set ZENODO_SANDBOX_TOKEN    <span class="co"># sandbox token</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div></li>
+<li><p><strong>Choose the target</strong> with the variable <code>ZENODO_TARGET</code>: <code>sandbox</code> while testing (releases become test releases <code>2.0-test.N</code>, the website is never changed), <code>production</code> for real DOIs:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">gh</span> variable set ZENODO_TARGET <span class="at">--body</span> sandbox    <span class="co"># or: production</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div></li>
+</ol>
+<p>The access right and licence of new versions are in the frontmatter (<code>zenodo.access_right</code>, now <code>closed</code>; <code>zenodo.license</code>, <code>cc-by-4.0</code>, applied once access is open).</p>
+</section>
+<section id="google-free-account-is-fine" class="level3">
+<h3 class="anchored" data-anchor-id="google-free-account-is-fine">3. Google (free account is fine)</h3>
+<p>Import and export act as one Google account. They read any Doc that account can open; exports are new Docs owned by it. Signed in to the <a href="https://console.cloud.google.com/">Google Cloud console</a> with that account (German labels in brackets):</p>
+<ol type="1">
+<li><p><strong>Project</strong>: create one (e.g. “IPBES Vision”). No billing is needed.</p></li>
+<li><p><strong>APIs</strong> (<em>APIs &amp; Services → Library</em>): enable <strong>Google Drive API</strong> and <strong>Google Docs API</strong> (<em>Aktivieren</em>). The Docs API writes the “NEW VERSION” / “IMPORTED” notices; without it, everything else still works.</p></li>
+<li><p><strong>Branding</strong> (<em>Google Auth Platform → Branding</em>): app name (“IPBES Vision”), support e-mail, developer contact e-mail, and — required before publishing — <strong>App home page</strong> <code>https://ipbes-data.github.io/IPBES_Data_Vision/admin/</code>, <strong>Privacy policy link</strong> <code>https://ipbes-data.github.io/IPBES_Data_Vision/admin/#privacy</code>, <strong>Authorized domain</strong> <code>ipbes-data.github.io</code>. Save (<em>Speichern</em>).</p></li>
+<li><p><strong>Audience</strong> (<em>Zielgruppe</em>): user type <strong>External</strong>, then <strong>Publish app</strong> (<em>App veröffentlichen</em>) → the status must read <strong>In production</strong> (<em>In Produktion</em>). In <em>Testing</em> only listed test users can sign in and Google ends the sign-in after 7 days.</p></li>
+<li><p><strong>Client</strong> (<em>Clients → Create client</em>): type <strong>Desktop app</strong>; download its JSON file (<code>client_secret_….json</code>). Keep it somewhere safe: it is needed again to renew the sign-in (or download it again from <em>Clients</em>).</p></li>
+<li><p><strong>Sign in once</strong>, in a copy of this repository:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> scripts/gdoc.py login ~/Downloads/client_secret_….json <span class="kw">|</span> <span class="ex">gh</span> secret set GOOGLE_OAUTH</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>A browser opens: choose the Google account; on “Google hasn’t verified this app” (<em>Google hat diese App nicht überprüft</em>) click <em>Advanced → Go to IPBES Vision (unsafe)</em> (<em>Erweitert → Zu IPBES Vision wechseln</em>) — it is your own app — and allow Google Drive access. The browser then says “Signed in”, the terminal “✓ Set Actions secret GOOGLE_OAUTH”.</p></li>
+</ol>
+</section>
+<section id="optional-variables" class="level3">
+<h3 class="anchored" data-anchor-id="optional-variables">4. Optional variables</h3>
 <table class="caption-top table">
 <colgroup>
-<col style="width: 33%">
-<col style="width: 33%">
-<col style="width: 33%">
+<col style="width: 50%">
+<col style="width: 50%">
 </colgroup>
 <thead>
 <tr class="header">
-<th>Name</th>
-<th>Kind</th>
-<th>Value</th>
+<th>Variable</th>
+<th>Use</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
-<td><code>ZENODO_TARGET</code></td>
-<td>variable</td>
-<td><code>sandbox</code> (tests) or <code>production</code> (real DOIs)</td>
-</tr>
-<tr class="even">
-<td><code>ZENODO_SANDBOX_TOKEN</code></td>
-<td>secret</td>
-<td>sandbox.zenodo.org token with <code>deposit:write</code> and <code>deposit:actions</code></td>
-</tr>
-<tr class="odd">
-<td><code>ZENODO_TOKEN</code></td>
-<td>secret</td>
-<td>zenodo.org token with <code>deposit:write</code> and <code>deposit:actions</code></td>
-</tr>
-<tr class="even">
-<td><code>GOOGLE_OAUTH</code></td>
-<td>secret</td>
-<td>Google sign-in, created by <code>scripts/gdoc.py login</code> (see below)</td>
-</tr>
-<tr class="odd">
-<td><code>GDOC_ID</code></td>
-<td>variable</td>
-<td>link or ID of the usual Google Doc to import from</td>
-</tr>
-<tr class="even">
 <td><code>GDRIVE_FOLDER_ID</code></td>
-<td>variable</td>
-<td>optional: link or ID of the Drive folder for exports (default: My Drive)</td>
+<td>Drive folder (link or ID) for new exports; default <em>My Drive</em>. Superseded exports move into a folder <code>archive</code> next to them.</td>
+</tr>
+<tr class="even">
+<td><code>GDOC_ID</code></td>
+<td>Doc (link or ID) to import when the import form is empty; normally not needed, because the latest exported Doc is used.</td>
 </tr>
 </tbody>
 </table>
-<p>People who use the panel need <em>Write</em> access to the repository.</p>
 </section>
-<section id="google-works-with-a-free-google-account" class="level3">
-<h3 class="anchored" data-anchor-id="google-works-with-a-free-google-account">Google (works with a free Google account)</h3>
-<p>Import and export act as <strong>one Google account</strong> (yours, or a dedicated one): they can read every Doc that account can open, and exports are new Docs owned by it, using its normal Drive storage. Set up once, on a computer with Python:</p>
+<section id="check-and-first-run" class="level3">
+<h3 class="anchored" data-anchor-id="check-and-first-run">5. Check and first run</h3>
 <ol type="1">
-<li><p>In the <a href="https://console.cloud.google.com/">Google Cloud console</a>, signed in with that account, create a project and enable the <strong>Google Drive API</strong> and the <strong>Google Docs API</strong> (the Docs API writes the “new version” and “imported” notices). No billing is needed.</p></li>
-<li><p><em>Google Auth Platform → Branding</em> (German: <em>Branding</em>): app name (e.g. “IPBES Vision”), support e-mail and developer contact e-mail, plus — required for publishing — <strong>App home page</strong> <code>https://ipbes-data.github.io/IPBES_Data_Vision/admin/</code>, <strong>Privacy policy link</strong> <code>https://ipbes-data.github.io/IPBES_Data_Vision/admin/#privacy</code> and <strong>Authorized domain</strong> <code>ipbes-data.github.io</code>; save. Then <em>Audience</em> (<em>Zielgruppe</em>): user type <strong>External</strong>, then <strong>Publish app</strong> (<em>App veröffentlichen</em>); the status must read “In production” (<em>In Produktion</em>). In “Testing” status only listed test users can sign in, and Google ends the sign-in after 7 days.</p></li>
-<li><p><em>Clients → Create client</em>, type <strong>Desktop app</strong>; download the JSON file (e.g. <code>client.json</code>).</p></li>
-<li><p>In this repository run, with the <a href="https://cli.github.com/">GitHub CLI</a> signed in:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> scripts/gdoc.py login client.json <span class="kw">|</span> <span class="ex">gh</span> secret set GOOGLE_OAUTH</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>A browser opens; sign in with the Google account. Google warns that the app is not verified: choose <em>Advanced → Go to IPBES Vision sync</em> (it is your own app) and allow access to Google Drive. Then delete <code>client.json</code>.</p></li>
+<li><strong>Check setup</strong> on the panel; fix every ❌ (⚠️ are hints, e.g. “sandbox”).</li>
+<li><strong>Export to Google Doc</strong> once (Target version e.g. <code>2.0</code>), then <strong>Import from Google Doc</strong> without editing: it should report “No changes”, which confirms the round trip through Google.</li>
+<li>Optional full test on the sandbox: with <code>ZENODO_TARGET=sandbox</code> make a pre-release, a release (<code>…-test.1</code>) and publish it; check it on sandbox.zenodo.org. Then set <code>ZENODO_TARGET</code> to <code>production</code>.</li>
 </ol>
-<p>If an import or export later fails with “sign-in has expired or was revoked” (e.g. after removing the app’s access in the Google account, or after 6 months without use), repeat step 4.</p>
 </section>
-<section id="how-the-google-doc-must-be-laid-out" class="level3">
-<h3 class="anchored" data-anchor-id="how-the-google-doc-must-be-laid-out">How the Google Doc must be laid out</h3>
+<section id="troubleshooting" class="level3">
+<h3 class="anchored" data-anchor-id="troubleshooting">Troubleshooting</h3>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 50%">
+<col style="width: 50%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Message</th>
+<th>Cause and fix</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>“Google Drive API has not been used in project … or it is disabled”</td>
+<td>Enable the Drive API (step 3.2), wait a few minutes.</td>
+</tr>
+<tr class="even">
+<td>“Google Docs API has not been used …” (warning)</td>
+<td>Enable the Docs API (step 3.2); exports still worked, but without notice on the old Doc.</td>
+</tr>
+<tr class="odd">
+<td>At sign-in: “Access blocked … has not completed the Google verification process”, <em>Error 403: access_denied</em></td>
+<td>The app is still in <em>Testing</em>: publish it (step 3.4).</td>
+</tr>
+<tr class="even">
+<td><em>Publish app</em> is greyed out</td>
+<td>Branding is incomplete: home page, privacy link and authorized domain (step 3.3).</td>
+</tr>
+<tr class="odd">
+<td>“The Google sign-in has expired or was revoked” / <code>invalid_grant</code></td>
+<td>Repeat step 3.6 (happens after 6 months without use, a password-related revocation, or removing the app’s access in the Google account).</td>
+</tr>
+<tr class="even">
+<td>Import: “The front matter of the Google Doc needs fixing”</td>
+<td>Fix the listed rows in the Doc’s tables (see <em>How the Google Doc must be laid out</em>) and import again.</td>
+</tr>
+<tr class="odd">
+<td>Release: “There is no release candidate …”, “The text has changed since …”, “Nothing has changed since …”</td>
+<td>The version rules at work: make a pre-release first, or a new one.</td>
+</tr>
+<tr class="even">
+<td>“The version must be 2.1 (minor change) or 3.0 (major change)”</td>
+<td>Only the next minor or major is allowed as Target version.</td>
+</tr>
+<tr class="odd">
+<td>Check setup: “Token accepted, but its account does not own …”</td>
+<td>The Zenodo token belongs to another account than the record: create it in the owning account.</td>
+</tr>
+<tr class="even">
+<td>A pull request stays open although its check is green</td>
+<td>Auto-merge sometimes does not fire: click <em>Merge</em> on the pull request.</td>
+</tr>
+<tr class="odd">
+<td><em>All versions</em> shows “HTTP 403” under pre-releases</td>
+<td>GitHub’s limit of 60 requests per hour per visitor; it clears within the hour.</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="maintenance" class="level3">
+<h3 class="anchored" data-anchor-id="maintenance">Maintenance</h3>
+<ul>
+<li><strong>Before the real release</strong>: <code>ZENODO_TARGET</code> → <code>production</code>.</li>
+<li><strong>Zenodo tokens</strong>: when replaced or revoked, create a new one (step 2.2) and store it again (step 2.3).</li>
+<li><strong>Google sign-in</strong>: renew with step 3.6 when import/export report it expired.</li>
+<li><strong>People</strong>: give new admins <em>Write</em> access (step 1.5).</li>
+<li><strong>No longer used</strong> (can be deleted): the variables <code>ZENODO_API_BASE</code> and <code>ZENODO_SANDBOX_API_BASE</code>.</li>
+</ul>
+</section>
+<section id="without-the-panel-command-line" class="level3">
+<h3 class="anchored" data-anchor-id="without-the-panel-command-line">Without the panel (command line)</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">make</span> preview                                                      <span class="co"># live preview while editing</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="fu">make</span> build                                                        <span class="co"># website + PDF as unreleased draft</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="fu">make</span> admin                                                        <span class="co"># this panel → _site/admin/index.html</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> scripts/release.py prepare <span class="at">--prerelease</span> <span class="at">--notes</span> <span class="st">&quot;a; b&quot;</span>    <span class="co"># pre-release build (no Zenodo)</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> scripts/versions.py status                                <span class="co"># current versions</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> scripts/check_setup.py                                    <span class="co"># setup check (needs the secrets in the environment)</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">GOOGLE_OAUTH</span><span class="op">=</span><span class="st">&quot;</span><span class="va">$(</span><span class="ex">python3</span> scripts/gdoc.py login client.json<span class="va">)</span><span class="st">&quot;</span>   <span class="co"># sign in for this shell</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> scripts/gdoc.py import <span class="op">&lt;</span>doc link<span class="op">&gt;</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+</section>
+<section id="how-the-google-doc-must-be-laid-out" class="level2">
+<h2 class="anchored" data-anchor-id="how-the-google-doc-must-be-laid-out">How the Google Doc must be laid out</h2>
 <p>Everything before the first heading is the front matter; the text of the Vision starts at the first <strong>Heading 1</strong>.</p>
 <ul>
 <li><strong>Document information</strong> table, two columns, one row per field: <code>Title</code>, <code>Produced by</code>, <code>Publisher</code>, <code>Contact e-mail</code>, <code>Current version (information only)</code>, <code>Target version</code>. All but <em>Current version</em> are required and imported; only the second column is edited. <em>Current version</em> is the version of the text in the Doc (e.g. <code>2.0-beta.3</code>); <em>Target version</em> is what the edits work towards (<code>MAJOR.MINOR</code>, e.g. <code>2.0</code>).</li>
@@ -5707,19 +5810,6 @@ color: #1f6f43; cursor: pointer; }
 </ul>
 <p>If a table is missing or a value is invalid, the import stops without changing anything and lists what to fix (shown under the failed run’s <em>details</em>).</p>
 <p>An export writes exactly this layout, so the easiest start is to run <strong>Export to Google Doc</strong> once and edit the new Doc.</p>
-</section>
-<section id="zenodo" class="level3">
-<h3 class="anchored" data-anchor-id="zenodo">Zenodo</h3>
-<p><code>ZENODO_TARGET</code> selects the Zenodo used by releases. The concept DOIs (“all versions” DOI) are in the frontmatter of <code>IPBES_Data_Vision.qmd</code> (<code>zenodo.concept_doi</code>, <code>zenodo.sandbox_concept_doi</code>). Sandbox releases never change the official website. If a prepared release is wrong, delete the draft on Zenodo and the release and its tag on GitHub, then make it again.</p>
-</section>
-<section id="without-the-panel" class="level3">
-<h3 class="anchored" data-anchor-id="without-the-panel">Without the panel</h3>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">make</span> preview                                                    <span class="co"># live preview while editing</span></span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="fu">make</span> build                                                      <span class="co"># website + PDF as unreleased draft</span></span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> scripts/release.py prepare <span class="at">--version</span> 1.2 <span class="at">--prerelease</span>   <span class="co"># pre-release build, no Zenodo</span></span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">GOOGLE_OAUTH</span><span class="op">=</span><span class="st">&quot;</span><span class="va">$(</span><span class="ex">python3</span> scripts/gdoc.py login client.json<span class="va">)</span><span class="st">&quot;</span>   <span class="co"># sign in once per shell</span></span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> scripts/gdoc.py import <span class="op">&lt;</span>doc link<span class="op">&gt;</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</section>
 </section>
 <section id="privacy" class="level2">
 <h2 class="anchored" data-anchor-id="privacy">Privacy: Google sign-in “IPBES Vision”</h2>
