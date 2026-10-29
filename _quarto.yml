@@ -3,9 +3,35 @@ project:
   render:
     - IPBES_Data_Vision.qmd
     - older-releases.qmd
+    - v1.0.qmd
+  resources:
+    - logos/ipbes.png
 
 website:
   title: "IPBES Data Management Vision"
+  navbar:
+    background: light
+    logo: logos/ipbes.png
+    logo-alt: "IPBES"
+    right:
+      - text: "The Vision"
+        icon: book
+        href: index.html
+      - text: "All versions"
+        icon: clock-history
+        href: older-releases.html
+      - text: "Download PDF"
+        icon: download
+        href: assets/IPBES-Data-Management-Vision-latest.pdf
+        target: _blank
+  page-footer:
+    left: "IPBES secretariat, Bonn, Germany"
+    right: "[tsu.data@ipbes.net](mailto:tsu.data@ipbes.net)"
+
+format:
+  html:
+    css: styles.css
+    include-after-body: pdf-link.html
 
 execute:
   echo: false

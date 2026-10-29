@@ -1,5 +1,5 @@
 ---
-title: "All Releases"
+title: "All versions"
 format:
   html:
     output-file: older-releases.html
@@ -11,27 +11,25 @@ execute:
 concept_doi <- rmarkdown::yaml_front_matter("IPBES_Data_Vision.qmd")$zenodo$concept_doi
 ```
 
-<p><a href="index.html">Vision</a> | <a href="older-releases.html">All Releases</a> | <a href="assets/IPBES-Data-Management-Vision-latest.pdf" target="_blank" rel="noopener noreferrer">Latest PDF</a></p>
-
 ## Releases
 
 Citable versions with a DOI, read live from Zenodo. Concept DOI (always the latest version): [`r concept_doi`](https://doi.org/`r concept_doi`)
 
 ```{r, results='asis'}
-cat(sprintf('<div id="releases" data-concept-doi="%s"><p>Loading releases from Zenodo&hellip;</p></div>', concept_doi))
+cat(sprintf('<div id="release-list" data-concept-doi="%s"><p>Loading releases from Zenodo&hellip;</p></div>', concept_doi))
 ```
 
 ## Pre-releases
 
 Drafts for review, archived on GitHub. **Pre-releases have no DOI and are not for citation.**
 
-<div id="pre-releases" data-repo="IPBES-Data/IPBES_Data_Vision"><p>Loading pre-releases from GitHub&hellip;</p></div>
+<div id="prerelease-list" data-repo="IPBES-Data/IPBES_Data_Vision"><p>Loading pre-releases from GitHub&hellip;</p></div>
 
 ```{=html}
 <style>
-#releases table, #pre-releases table { width: 100%; border-collapse: collapse; margin-top: 0.75rem; }
-#releases th, #pre-releases th { text-align: left; padding: 0.55rem 1rem 0.55rem 0; border-bottom: 2px solid #d7dee6; }
-#releases td, #pre-releases td { padding: 0.6rem 1rem 0.6rem 0; border-bottom: 1px solid #e7ebef; white-space: nowrap; }
+#release-list table, #prerelease-list table { width: 100%; border-collapse: collapse; margin-top: 0.75rem; }
+#release-list th, #prerelease-list th { text-align: left; padding: 0.55rem 1rem 0.55rem 0; border-bottom: 2px solid #d7dee6; }
+#release-list td, #prerelease-list td { padding: 0.6rem 1rem 0.6rem 0; border-bottom: 1px solid #e7ebef; white-space: nowrap; }
 </style>
 <script>
 (() => {
@@ -51,7 +49,7 @@ Drafts for review, archived on GitHub. **Pre-releases have no DOI and are not fo
     }
   };
 
-  const releases = document.getElementById("releases");
+  const releases = document.getElementById("release-list");
   const conceptDoi = releases.dataset.conceptDoi;
   // ponytail: one page of 25 (Zenodo's anonymous maximum); add paging past 25 versions.
   fill(releases,
@@ -65,7 +63,7 @@ Drafts for review, archived on GitHub. **Pre-releases have no DOI and are not fo
     (msg) => `<p>Could not load releases (${msg}). See all versions on Zenodo: ` +
       `${link(`https://doi.org/${conceptDoi}`, conceptDoi)}</p>`);
 
-  const pre = document.getElementById("pre-releases");
+  const pre = document.getElementById("prerelease-list");
   const repo = pre.dataset.repo;
   fill(pre,
     `https://api.github.com/repos/${repo}/releases?per_page=100`,

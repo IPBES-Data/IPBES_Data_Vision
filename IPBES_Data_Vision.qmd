@@ -1,6 +1,5 @@
 ---
 title: "The IPBES long-term vision of data and knowledge management"
-subtitle: "Version {{< meta version >}} · {{< meta release_date >}}"
 # Version, release date, release notes and DOI are not stored here: scripts/release.py
 # adds them from the release form. title, produced_by, publisher, contact_email, editors
 # and next_version (the version this text is prepared as, chosen at export) are updated
@@ -69,8 +68,40 @@ citation_line <- sprintf(
   "IPBES (%s): *%s*, version %s, %s (eds.). %s. DOI: %s",
   release_year, meta$title, version, editor_text, meta$publisher, doi_text
 )
+
+# Website only: banner saying what kind of version this is, and a compact "About this version" card.
+current <- if (nzchar(release("current_release"))) release("current_release") else "1.0"
+current_link <- sprintf('<a href="https://doi.org/%s">version %s</a>', concept_doi, current)
+doi_html <- if (nzchar(doi)) sprintf('<a href="https://doi.org/%s">%s</a>', doi, doi) else
+  if (nzchar(release("prerelease"))) "none (pre-release)" else "none (draft)"
+banner <- if (nzchar(release("prerelease"))) {
+  c("prerelease", "exclamation-triangle", sprintf(
+    "<b>Pre-release %s</b> &middot; for review, not for citation &middot; the current released version is %s", version, current_link))
+} else if (nzchar(doi)) {
+  c("release", "check-circle", sprintf("<b>Version %s</b> &middot; released %s &middot; cite it with DOI %s", version, release_date, doi_html))
+} else {
+  c("draft", "pencil", sprintf("<b>Working draft</b> &middot; not released, no DOI &middot; the current released version is %s", current_link))
+}
+li <- function(md) paste0("<ul>", paste0("<li>", sub("^- ", "", strsplit(md, "\n")[[1]]), "</li>", collapse = ""), "</ul>")
+citation_html <- sprintf("IPBES (%s): <i>%s</i>, version %s, %s (eds.). %s. DOI: %s",
+                         release_year, meta$title, version, editor_text, meta$publisher, doi_html)
 ```
 
+::: {.content-visible when-format="html"}
+```{r, results='asis'}
+cat(sprintf('<div class="status-banner status-%s"><i class="bi bi-%s"></i><span>%s</span></div>\n', banner[1], banner[2], banner[3]))
+cat(sprintf('<div class="version-card"><div class="facts">
+<div><div class="label">Version</div>%s</div><div><div class="label">Date</div>%s</div>
+<div><div class="label">DOI</div>%s</div><div><div class="label">Editors</div>%s</div></div>
+<details><summary>Release notes</summary>%s</details>
+<details><summary>How to cite</summary><p>%s</p></details></div>
+<div class="vision-start"></div>\n',
+  version, release_date, doi_html, editor_text,
+  if (grepl("^- ", release_notes)) li(release_notes) else paste0("<p>", release_notes, "</p>"), citation_html))
+```
+:::
+
+::: {.content-visible when-format="pdf"}
 \newpage
 
 ## Release Metadata {.unnumbered}
@@ -79,7 +110,7 @@ citation_line <- sprintf(
 - **Release date:** `r release_date`
 - **DOI:** `r doi_text`
 - **Latest-version DOI:** `r sprintf("[%s](https://doi.org/%s)", concept_doi, concept_doi)`
-- **PDF:** `r if (knitr::is_html_output()) "<a href=\"assets/IPBES-Data-Management-Vision-latest.pdf\" target=\"_blank\" rel=\"noopener noreferrer\">Download PDF</a>" else "Download the latest PDF from the website."`
+- **PDF:** Download the latest PDF from the website.
 
 ## Release Notes {.unnumbered}
 
@@ -87,23 +118,8 @@ citation_line <- sprintf(
 cat(release_notes)
 ```
 
-```{r, results='asis'}
-if (knitr::is_html_output()) {
-  cat(
-    "<p>",
-    "<a href=\"index.html\">Vision</a>",
-    " | ",
-    "<a href=\"older-releases.html\">All Releases</a>",
-    " | ",
-    "<a href=\"assets/IPBES-Data-Management-Vision-latest.pdf\" target=\"_blank\" rel=\"noopener noreferrer\">Latest PDF</a>",
-    "</p>",
-    sep = ""
-  )
-}
-```
-
-
 \newpage
+:::
 
 {{< include _content.md >}}
 
