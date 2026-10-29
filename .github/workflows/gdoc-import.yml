@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       doc:
-        description: "Google Doc link (leave empty for the usual editing Doc)"
+        description: "Google Doc link (leave empty for the latest exported Doc shown on the admin panel)"
         required: false
 
 permissions:
@@ -28,6 +28,12 @@ jobs:
 
       - name: Import from Google Doc
         run: |
+          if [ -z "$DOC" ]; then   # default: the newest Doc made by "Export to Google Doc"
+            git fetch -q --depth=1 origin gh-pages
+            DOC=$(git show FETCH_HEAD:admin/latest-export.json 2>/dev/null | jq -r '.url // empty')
+            [ -n "$DOC" ] || { echo "### No Google Doc given and none exported yet." >> "$GITHUB_STEP_SUMMARY"; exit 1; }
+            echo "Importing the latest exported Doc: $DOC"
+          fi
           if ! python3 scripts/gdoc.py import "$DOC" > import.log 2>&1; then
             { echo "### Import failed"; echo '```'; cat import.log; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
             cat import.log
@@ -37,7 +43,7 @@ jobs:
 
       - name: Open a pull request with the changes
         run: |
-          git add -A _content.md media IPBES_Data_Vision.qmd
+          git add -A -- _content.md IPBES_Data_Vision.qmd $( [ -e media ] || git ls-files --error-unmatch media >/dev/null 2>&1 && echo media )
           if git diff --cached --quiet; then
             echo "### No changes: the Google Doc matches the current text." >> "$GITHUB_STEP_SUMMARY"
             exit 0
