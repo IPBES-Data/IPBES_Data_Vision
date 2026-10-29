@@ -131,7 +131,7 @@ def based_on(ts: list) -> str:
     try:
         nearest = git("describe", "--tags", "--abbrev=0", "--match", "v*", "--exclude", "*-test.*", "HEAD")
     except subprocess.CalledProcessError:
-        return fmt(FIRST_RELEASE)
+        return "draft (no version yet)"
     rank = {None: 0, "rc": 1, "beta": 2}
     here = [t for t in ts if t[2] != "test" and commit(t[4]) == commit(nearest)]
     return min(here, key=lambda t: rank[t[2]])[4][1:] if here else nearest[1:]

@@ -46,6 +46,7 @@ run("git", "init", "-q")
 ts = lambda: v.tags(fetch=False)
 
 change()                                                    # first change after 1.0 (on Zenodo), nothing chosen
+assert v.based_on(ts()) == "draft (no version yet)"         # no tags at all yet
 assert v.target(ts()) == (1, 1) and v.beta_tag(ts()) == "v1.1-beta.1"; tag("v1.1-beta.1")
 assert v.allowed(ts()) == [(1, 1), (2, 0)]
 assert "must be 1.1 (minor change) or 2.0 (major change)" in refused(v.check, "1.5", ts())
