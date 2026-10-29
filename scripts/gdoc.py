@@ -4,12 +4,17 @@
   gdoc.py import <doc link or id>       Google Doc -> _content.md (+ media/) and the bibliographic fields in the .qmd
   gdoc.py export [folder] [version]     bibliographic fields + _content.md -> a new Google Doc (default folder:
                                         My Drive); version (e.g. 1.1, default: current target) goes into the Doc
+  gdoc.py stamp-import <doc> <url>      put "IMPORTED into <url>" on top of the Doc and lock it (read-only)
   gdoc.py login <client.json>           one-time sign-in; prints the GOOGLE_OAUTH secret on stdout
+
+An export also puts "NEW VERSION AVAILABLE: <link>" on top of the previous export (PREVIOUS_EXPORT, a link)
+and locks it. Locking uses Drive's content restriction (the Doc's owner can unlock it in Drive); the notice
+needs the Google Docs API to be enabled in the Google Cloud project.
 
 Google Doc layout (export writes it, import reads it). Everything before the first heading is front matter:
   - a "Document information" table, one row per field (FIELDS below), value in the second column;
   - an "Editors" table with the columns Name | Institution | ORCID, one row per editor;
-  - anything else there (the "Based on version" line, notes, table of contents) is ignored.
+  - anything else there (the "Current version" row, notes, table of contents) is ignored.
 The text starts at the first Heading 1 that is not a table of contents.
 
 Auth: GOOGLE_OAUTH holds {"client_id", "client_secret", "refresh_token"} from `login`, so import and
@@ -41,13 +46,15 @@ SCOPE = "https://www.googleapis.com/auth/drive"
 TOKEN_URL = "https://oauth2.googleapis.com/token"
 # Row label in the "Document information" table -> frontmatter key. All rows are required.
 FIELDS = {"Title": "title", "Produced by": "produced_by", "Publisher": "publisher", "Contact e-mail": "contact_email",
-          "Version": "next_version"}
+          "Target version": "next_version"}
+OLD_LABELS = {"version": "next_version"}  # label used by earlier exports
+CURRENT = "Current version (information only)"
 EDITOR_COLUMNS = ["Name", "Institution", "ORCID"]
 ORCID = re.compile(r"\d{4}-\d{4}-\d{4}-\d{3}[\dX]")
 EMAIL = re.compile(r"[^@\s]+@[^@\s]+\.[^@\s]+")
 NOTE = ("Edit the two tables below to change the bibliographic information; add or delete rows in the Editors "
-        "table as needed. Do not rename the tables' first column. Version is the version this text is being "
-        "prepared as: the next minor (e.g. 1.1) for wording, corrections, references or editors, or the next major "
+        "table as needed. Do not rename the tables' first column. Current version is the version of the text in "
+        "this Doc. Target version is the version the edits work towards: the next minor (e.g. 1.1) for wording, corrections, references or editors, or the next major "
         "(e.g. 2.0) when aims, tracks, targets or the structure change; beta and release-candidate numbers are "
         "added automatically. The text of the Vision starts at the first heading; this part is not copied into it.")
 
@@ -74,6 +81,8 @@ def call(method: str, url: str, data: bytes = None, headers: dict = None) -> byt
         detail = exc.read().decode(errors="replace")[:500]
         if "invalid_grant" in detail:
             detail += "\nThe Google sign-in has expired or was revoked; run `scripts/gdoc.py login` again."
+        elif "has not been used in project" in detail or "is disabled" in detail:
+            detail += "\nEnable this API in the Google Cloud project (link above), wait a few minutes, then retry."
         elif exc.code in (403, 404):
             detail += "\nCan the account that signed in open this Google Doc or folder?"
         sys.exit(f"Google {method} {url.split('?')[0]} -> HTTP {exc.code}: {detail}")
@@ -129,7 +138,7 @@ def read_front_matter(blocks: list) -> dict:
                         editor["orcid"] = match.group(0)
                 editors.append(editor)
         else:
-            labels = {label.lower(): key for label, key in FIELDS.items()}
+            labels = {**OLD_LABELS, **{label.lower(): key for label, key in FIELDS.items()}}
             for row in rows:
                 key = labels.get(row[0].rstrip(":").strip().lower()) if row else None
                 if key:
@@ -200,9 +209,9 @@ def export_docx(version: str = "") -> bytes:
         meta = json.loads(pandoc(str(QMD), "-t", "plain", "--template", str(Path(tmp, "meta.txt"))))
         meta["next_version"] = versions.fmt(versions.check(version, ts) if version.strip() else versions.target(ts))
         based_on = versions.based_on(ts)
-        front = [f"*Based on version {based_on} (for information; not imported).*", "", f"*{NOTE}*", "",
-                 "**Document information**", "", "| Field | Value |", "|---|---|"]
+        front = [f"*{NOTE}*", "", "**Document information**", "", "| Field | Value |", "|---|---|"]
         front += [f"| {label} | {cell(meta.get(key))} |" for label, key in FIELDS.items()]
+        front.insert(-1, f"| {CURRENT} | {based_on} |")
         front += ["", "**Editors**", "", "| " + " | ".join(EDITOR_COLUMNS) + " |", "|---|---|---|"]
         front += [f"| {cell(e.get('name'))} | {cell(e.get('institution'))} | {cell(e.get('orcid'))} |"
                   for e in meta.get("editors", [])]
@@ -210,6 +219,38 @@ def export_docx(version: str = "") -> bytes:
         pandoc("-f", "markdown", "-o", str(out), "--shift-heading-level-by=-1", "--resource-path=.",
                stdin="\n".join(front) + "\n\n" + CONTENT.read_text())
         return out.read_bytes()
+
+
+def stamp(doc: str, before: str, link_text: str, url: str, after: str = "") -> None:
+    """Put a highlighted notice with a link at the top of a Google Doc, then lock the Doc (read-only)."""
+    target, token = doc_id(doc), access_token()
+    file_url = f"https://www.googleapis.com/drive/v3/files/{target}?supportsAllDrives=true"
+    headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
+    lock = lambda read_only: call("PATCH", file_url, json.dumps({"contentRestrictions": [
+        {"readOnly": read_only, **({"reason": before.strip()} if read_only else {})}]}).encode(), headers)
+    units = lambda s: len(s.encode("utf-16-le")) // 2  # Docs indexes count UTF-16 code units
+    text = f"{before} {link_text}{after}\n"
+    link_start = 1 + units(before) + 1
+    style = {"bold": True, "fontSize": {"magnitude": 14, "unit": "PT"},
+             "foregroundColor": {"color": {"rgbColor": {"red": 0.6, "green": 0.1, "blue": 0.1}}},
+             "backgroundColor": {"color": {"rgbColor": {"red": 1.0, "green": 0.93, "blue": 0.6}}}}
+    requests = [
+        {"insertText": {"location": {"index": 1}, "text": text}},
+        {"updateTextStyle": {"range": {"startIndex": 1, "endIndex": units(text)}, "textStyle": style,
+                             "fields": ",".join(style)}},
+        {"updateTextStyle": {"range": {"startIndex": link_start, "endIndex": link_start + units(link_text)},
+                             "textStyle": {"link": {"url": url}}, "fields": "link"}},
+    ]
+    lock(False)  # a Doc locked earlier (e.g. after an import) must be unlocked to take the notice
+    call("POST", f"https://docs.googleapis.com/v1/documents/{target}:batchUpdate", json.dumps({"requests": requests}).encode(),
+         headers)
+    lock(True)
+
+
+def cmd_stamp_import(doc: str, url: str) -> None:
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    stamp(doc, f"IMPORTED on {today} into", url, url, " (version number follows when accepted). This Doc is now read-only.")
+    print(f"Marked {doc} as imported and locked it.")
 
 
 def cmd_import(link: str) -> None:
@@ -222,8 +263,8 @@ def cmd_export(folder: str = "", version: str = "") -> None:
     """Upload the export as a new Google Doc (Drive converts the .docx); record it in build/latest-export.json."""
     ts = versions.tags()
     version = versions.fmt(versions.check(version, ts) if version.strip() else versions.target(ts))
-    stamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
-    metadata = {"name": f"IPBES Data Management Vision {version} - export {stamp}", "mimeType": GDOC}
+    created_at = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+    metadata = {"name": f"IPBES Data Management Vision {version} - export {created_at}", "mimeType": GDOC}
     if folder:
         metadata["parents"] = [doc_id(folder.replace("/folders/", "/d/"))]
     boundary = "vision-export-boundary"
@@ -234,10 +275,18 @@ def cmd_export(folder: str = "", version: str = "") -> None:
                                       "&supportsAllDrives=true", body,
                               {"Authorization": f"Bearer {token}", "Content-Type": f"multipart/related; boundary={boundary}"}))
     record = {"name": metadata["name"], "url": f"https://docs.google.com/document/d/{created['id']}/edit",
-              "version": version, "created": stamp}
+              "version": version, "created": created_at}
     Path("build").mkdir(exist_ok=True)
     Path("build/latest-export.json").write_text(json.dumps(record, indent=2) + "\n")
     print(f"Created {record['name']!r}: {record['url']}")
+    previous = os.environ.get("PREVIOUS_EXPORT", "")
+    if previous and doc_id(previous) != created["id"]:
+        try:
+            stamp(previous, "NEW VERSION AVAILABLE - this Doc is outdated and read-only. Continue in:", record["name"],
+                  record["url"])
+            print(f"Marked the previous export {previous} as outdated and locked it.")
+        except SystemExit as exc:  # the new Doc exists; a failed notice on the old one must not hide that
+            print(f"Warning: could not mark the previous export {previous}: {exc}", file=sys.stderr)
 
 
 def cmd_login(client_file: str) -> None:
@@ -278,7 +327,12 @@ def cmd_login(client_file: str) -> None:
 
 
 if __name__ == "__main__":
-    commands = {"import": cmd_import, "export": cmd_export, "login": cmd_login}
-    if len(sys.argv) < 2 or sys.argv[1] not in commands or (sys.argv[1] != "export" and len(sys.argv) != 3):
+    command, args = (sys.argv[1:2] or [""])[0], sys.argv[2:]
+    if command == "export" and len(args) <= 2:
+        cmd_export(*args)
+    elif command in ("import", "login") and len(args) == 1:
+        {"import": cmd_import, "login": cmd_login}[command](args[0])
+    elif command == "stamp-import" and len(args) == 2:
+        cmd_stamp_import(*args)
+    else:
         sys.exit(__doc__)
-    commands[sys.argv[1]](*sys.argv[2:4])

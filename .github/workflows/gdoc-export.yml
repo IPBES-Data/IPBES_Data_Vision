@@ -36,7 +36,10 @@ jobs:
       - name: Create the Google Doc
         run: |
           set -o pipefail   # a failed export must fail the run
-          python3 scripts/gdoc.py export "$FOLDER" "$VERSION" | tee -a "$GITHUB_STEP_SUMMARY"
+          # The previous export gets "NEW VERSION AVAILABLE" on top and is locked (read-only).
+          git fetch -q --depth=1 origin gh-pages
+          export PREVIOUS_EXPORT=$(git show FETCH_HEAD:admin/latest-export.json 2>/dev/null | jq -r '.url // empty')
+          python3 scripts/gdoc.py export "$FOLDER" "$VERSION" 2>&1 | tee -a "$GITHUB_STEP_SUMMARY"
           mkdir -p panel && cp build/latest-export.json panel/
 
       - name: Show the new Doc on the admin panel

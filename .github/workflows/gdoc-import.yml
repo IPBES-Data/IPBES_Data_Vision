@@ -34,6 +34,7 @@ jobs:
             [ -n "$DOC" ] || { echo "### No Google Doc given and none exported yet." >> "$GITHUB_STEP_SUMMARY"; exit 1; }
             echo "Importing the latest exported Doc: $DOC"
           fi
+          echo "IMPORTED_DOC=$DOC" >> "$GITHUB_ENV"
           if ! python3 scripts/gdoc.py import "$DOC" > import.log 2>&1; then
             { echo "### Import failed"; echo '```'; cat import.log; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
             cat import.log
@@ -66,3 +67,5 @@ jobs:
           # Pull requests opened by Actions do not start other workflows on their own.
           gh workflow run pr-check.yml --ref "$branch"
           echo "### Review the imported text: $url" >> "$GITHUB_STEP_SUMMARY"
+          # Mark the Doc as imported and lock it (read-only); a failure here must not hide the pull request.
+          python3 scripts/gdoc.py stamp-import "$IMPORTED_DOC" "$url" 2>&1 | tee -a "$GITHUB_STEP_SUMMARY" || true

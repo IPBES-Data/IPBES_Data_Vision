@@ -14,20 +14,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: r-lib/actions/setup-r@v2
-        with:
-          use-public-rspm: true
-
-      # Installs and caches the R packages
-      - uses: r-lib/actions/setup-r-dependencies@v2
-        with:
-          packages: |
-            any::rmarkdown
-            any::knitr
-
       - uses: quarto-dev/quarto-actions/setup@v2
-
-      - uses: r-lib/actions/setup-tinytex@v2
+        with:
+          tinytex: true
 
       - name: Check the version rules
         run: python3 scripts/test_versions.py

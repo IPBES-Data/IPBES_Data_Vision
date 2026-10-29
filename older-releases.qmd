@@ -3,21 +3,12 @@ title: "All versions"
 format:
   html:
     output-file: older-releases.html
-execute:
-  echo: false
 ---
 
-```{r}
-concept_doi <- rmarkdown::yaml_front_matter("IPBES_Data_Vision.qmd")$zenodo$concept_doi
-```
 
 ## Releases
 
-Citable versions with a DOI, read live from Zenodo. Concept DOI (always the latest version): [`r concept_doi`](https://doi.org/`r concept_doi`)
-
-```{r, results='asis'}
-cat(sprintf('<div id="release-list" data-concept-doi="%s"><p>Loading releases from Zenodo&hellip;</p></div>', concept_doi))
-```
+{{< include _generated/concept.md >}}
 
 ## Pre-releases
 
