@@ -2275,14 +2275,17 @@ row-gap: 0; margin: 0.5rem 0 1rem; }
 display: grid; grid-row: span 4; grid-template-rows: subgrid; row-gap: 0.5rem; }
 #panel .card h3 { margin: 0; font-size: 1.1rem; }
 #panel .card p { margin: 0; }
-#panel .btn { align-self: start; }
-#panel .btn { display: block; text-align: center; background: #1f6f43; color: #fff; padding: 0.5rem 0.75rem;
+
+#panel .btn { align-self: stretch; display: flex; align-items: center; justify-content: center; text-align: center; background: #1f6f43; color: #fff; padding: 0.5rem 0.75rem;
 border-radius: 6px; text-decoration: none; font-weight: 600; }
 #panel .btn:hover { background: #18583a; }
 #panel .card p.status { color: #555; font-size: 0.85rem; }
 #panel .waiting { background: #fff6d6; border-radius: 6px; padding: 0.5rem 0.75rem; margin: 0 0 0.5rem; }
 #panel .links { font-size: 0.9rem; }
 #panel .versions { margin: 0.25rem 0 0; }
+#panel .copy { font-size: 0.85rem; padding: 0 0.5rem; border: 1px solid #1f6f43; border-radius: 4px; background: #fff;
+color: #1f6f43; cursor: pointer; }
+#panel #latest-export code { font-size: 0.8rem; word-break: break-all; }
 #panel .hint { font-size: 0.9rem; background: #eef4fb; border-radius: 6px; padding: 0.5rem 0.75rem; }
 </style>
 
@@ -2316,8 +2319,12 @@ border-radius: 6px; text-decoration: none; font-weight: 600; }
   });
   // Link to the newest Google Doc made by "Export to Google Doc" (written next to this page by that workflow).
   fetch("latest-export.json", { cache: "no-store" }).then((r) => (r.ok ? r.json() : null)).then((e) => {
-    if (e) document.getElementById("latest-export").innerHTML =
-      `Latest Google Doc export: ${link(e.url, e.name)} (version ${e.version})`;
+    if (!e) return;
+    const box = document.getElementById("latest-export");
+    box.innerHTML = `Latest Google Doc (export of version ${e.version}, ${e.created}): ${link(e.url, "Open")} · ` +
+      `<button type="button" class="copy">Copy link</button><br><code>${e.url}</code>`;
+    box.querySelector(".copy").addEventListener("click", (ev) =>
+      navigator.clipboard.writeText(e.url).then(() => { ev.target.textContent = "Copied"; }));
   }).catch(() => {});
 
   // Current versions, from the tags and next_version in the frontmatter (same rules as scripts/versions.py).
@@ -2350,7 +2357,7 @@ border-radius: 6px; text-decoration: none; font-weight: 600; }
 <section id="what-the-buttons-do" class="level2">
 <h2 class="anchored" data-anchor-id="what-the-buttons-do">What the buttons do</h2>
 <ol type="1">
-<li><strong>Import from Google Doc</strong> copies the text and the bibliographic tables from the Google Doc. Nothing changes on the website yet: you get a page showing every change, where you accept (<strong>Merge</strong>) or discard (<strong>Close</strong>) it. An accepted import gets the next beta number. The form takes a Doc link; leave it empty for the usual Doc.</li>
+<li><strong>Import from Google Doc</strong> copies the text and the bibliographic tables from the Google Doc. Nothing changes on the website yet: you get a page showing every change, where you accept (<strong>Merge</strong>) or discard (<strong>Close</strong>) it. An accepted import gets the next beta number. The form takes a Doc link; leave it empty to import the latest exported Doc (shown above the buttons).</li>
 <li><strong>Export to Google Doc</strong> asks which version this round of editing prepares (e.g. <code>1.1</code> for a minor or <code>2.0</code> for a major change; empty keeps the current one) and creates a <strong>new</strong> Google Doc in your Drive with the current text and the bibliographic tables, including that version; its link is shown under the run’s <em>details</em>. Existing Docs are never changed. Paste the new Doc’s link into the import form later (or ask the technical admin to make it the usual Doc).</li>
 <li><strong>Make a release or pre-release</strong> asks for the type and what changed (items separated by <code>;</code>). There is no version number to type: it follows the rules below.
 <ul>
