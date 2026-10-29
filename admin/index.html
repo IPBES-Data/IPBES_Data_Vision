@@ -2236,13 +2236,13 @@ vertical-align: -.125em;
   <div class="card">
     <h3 class="anchored">1. Import</h3>
     <p>Bring in the edits from the Google Doc.</p>
-    <a class="btn" data-workflow="gdoc-import.yml" title="Copies the text and the Document information and Editors tables from the Google Doc. Opens a page listing every change; Merge it to accept (it then gets the next beta number, e.g. 1.1-beta.3), Close it to discard. The website does not change. Form: Doc link (empty = usual Doc)." href>Import from Google Doc</a>
+    <a class="btn" data-workflow="gdoc-import.yml" title="Copies the text and the Document information and Editors tables from the Google Doc. Opens a page listing every change; Merge it to accept (it then gets the next beta number, e.g. 1.1-beta.3), Close it to discard. The website does not change. The imported Doc is then marked as imported and locked (read-only). Form: Doc link (empty = usual Doc)." href>Import from Google Doc</a>
     <p class="status" data-status="gdoc-import.yml"></p>
   </div>
   <div class="card">
     <h3 class="anchored">2. Export</h3>
     <p>New Google Doc with the current text.</p>
-    <a class="btn" data-workflow="gdoc-export.yml" title="Creates a new Google Doc in your Drive with the current text and the bibliographic tables. Existing Docs are not changed. The new Doc&#39;s link is shown under the run&#39;s details. Form: the version this round of editing prepares (empty = keep the current one): minor, e.g. 1.1, for wording, corrections, references or editors; major, e.g. 2.0, when aims, tracks, targets or the structure change. And the Drive folder (empty = usual folder)." href>Export to Google Doc</a>
+    <a class="btn" data-workflow="gdoc-export.yml" title="Creates a new Google Doc in your Drive with the current text and the bibliographic tables. The previous export is marked " new version available" and locked (read-only). the doc's link is shown under run's details. form: this round of editing prepares (empty="keep" current one): minor, e.g. 1.1, for wording, corrections, references or editors; major, 2.0, when aims, tracks, targets structure change. drive folder folder)." href>Export to Google Doc</a>
     <p class="status" data-status="gdoc-export.yml"></p>
   </div>
   <div class="card">
@@ -2357,8 +2357,8 @@ color: #1f6f43; cursor: pointer; }
 <section id="what-the-buttons-do" class="level2">
 <h2 class="anchored" data-anchor-id="what-the-buttons-do">What the buttons do</h2>
 <ol type="1">
-<li><strong>Import from Google Doc</strong> copies the text and the bibliographic tables from the Google Doc. Nothing changes on the website yet: you get a page showing every change, where you accept (<strong>Merge</strong>) or discard (<strong>Close</strong>) it. An accepted import gets the next beta number. The form takes a Doc link; leave it empty to import the latest exported Doc (shown above the buttons).</li>
-<li><strong>Export to Google Doc</strong> asks which version this round of editing prepares (e.g. <code>1.1</code> for a minor or <code>2.0</code> for a major change; empty keeps the current one) and creates a <strong>new</strong> Google Doc in your Drive with the current text and the bibliographic tables, including that version; its link is shown under the run’s <em>details</em>. Existing Docs are never changed. Paste the new Doc’s link into the import form later (or ask the technical admin to make it the usual Doc).</li>
+<li><strong>Import from Google Doc</strong> copies the text and the bibliographic tables from the Google Doc. Nothing changes on the website yet: you get a page showing every change, where you accept (<strong>Merge</strong>) or discard (<strong>Close</strong>) it. An accepted import gets the next beta number. The imported Doc gets a highlighted line at the top, “IMPORTED on … into <link to the review page>”, and is locked (read-only). The form takes a Doc link; leave it empty to import the latest exported Doc (shown above the buttons).</li>
+<li><strong>Export to Google Doc</strong> asks which version this round of editing prepares (e.g. <code>1.1</code> for a minor or <code>2.0</code> for a major change; empty keeps the current one) and creates a <strong>new</strong> Google Doc in your Drive with the current text and the bibliographic tables, including that version; its link is shown under the run’s <em>details</em>. The previous export gets a highlighted line at the top, “NEW VERSION AVAILABLE … Continue in: <link>”, and is locked (read-only); otherwise existing Docs are not changed. Paste the new Doc’s link into the import form later (or ask the technical admin to make it the usual Doc).</li>
 <li><strong>Make a release or pre-release</strong> asks for the type and what changed (items separated by <code>;</code>). There is no version number to type: it follows the rules below.
 <ul>
 <li><strong>Pre-release</strong>: the next release candidate, e.g. <code>1.1-rc.2</code>. No DOI, archived on GitHub, shown at the <em>Pre-release preview</em> link.</li>
@@ -2472,7 +2472,7 @@ color: #1f6f43; cursor: pointer; }
 <h3 class="anchored" data-anchor-id="google-works-with-a-free-google-account">Google (works with a free Google account)</h3>
 <p>Import and export act as <strong>one Google account</strong> (yours, or a dedicated one): they can read every Doc that account can open, and exports are new Docs owned by it, using its normal Drive storage. Set up once, on a computer with Python:</p>
 <ol type="1">
-<li><p>In the <a href="https://console.cloud.google.com/">Google Cloud console</a>, signed in with that account, create a project and enable the <strong>Google Drive API</strong>. No billing is needed.</p></li>
+<li><p>In the <a href="https://console.cloud.google.com/">Google Cloud console</a>, signed in with that account, create a project and enable the <strong>Google Drive API</strong> and the <strong>Google Docs API</strong> (the Docs API writes the “new version” and “imported” notices). No billing is needed.</p></li>
 <li><p><em>Google Auth Platform → Branding</em> (German: <em>Branding</em>): app name (e.g. “IPBES Vision”), support e-mail and developer contact e-mail, plus — required for publishing — <strong>App home page</strong> <code>https://ipbes-data.github.io/IPBES_Data_Vision/admin/</code>, <strong>Privacy policy link</strong> <code>https://ipbes-data.github.io/IPBES_Data_Vision/admin/#privacy</code> and <strong>Authorized domain</strong> <code>ipbes-data.github.io</code>; save. Then <em>Audience</em> (<em>Zielgruppe</em>): user type <strong>External</strong>, then <strong>Publish app</strong> (<em>App veröffentlichen</em>); the status must read “In production” (<em>In Produktion</em>). In “Testing” status only listed test users can sign in, and Google ends the sign-in after 7 days.</p></li>
 <li><p><em>Clients → Create client</em>, type <strong>Desktop app</strong>; download the JSON file (e.g. <code>client.json</code>).</p></li>
 <li><p>In this repository run, with the <a href="https://cli.github.com/">GitHub CLI</a> signed in:</p>
@@ -2485,7 +2485,7 @@ color: #1f6f43; cursor: pointer; }
 <h3 class="anchored" data-anchor-id="how-the-google-doc-must-be-laid-out">How the Google Doc must be laid out</h3>
 <p>Everything before the first heading is the front matter; the text of the Vision starts at the first <strong>Heading 1</strong>.</p>
 <ul>
-<li><strong>Document information</strong> table, two columns, one row per field: <code>Title</code>, <code>Produced by</code>, <code>Publisher</code>, <code>Contact e-mail</code>. All are required; only the second column is edited.</li>
+<li><strong>Document information</strong> table, two columns, one row per field: <code>Title</code>, <code>Produced by</code>, <code>Publisher</code>, <code>Contact e-mail</code>, <code>Current version (information only)</code>, <code>Target version</code>. All but <em>Current version</em> are required and imported; only the second column is edited. <em>Current version</em> is the version of the text in the Doc (e.g. <code>2.0-beta.3</code>); <em>Target version</em> is what the edits work towards (<code>MAJOR.MINOR</code>, e.g. <code>2.0</code>).</li>
 <li><strong>Editors</strong> table with the columns <code>Name | Institution | ORCID</code>, one row per editor; add or delete rows as needed. Institution and ORCID may be empty; an ORCID may be given as number or as orcid.org link.</li>
 <li>Anything else before the first heading (notes, Google’s table of contents) is ignored.</li>
 <li>Section titles use <strong>Heading 1</strong> (sub-sections Heading 2, …). Typed numbers such as “I.” or “2.1” in headings are removed; the website and PDF number sections themselves.</li>
