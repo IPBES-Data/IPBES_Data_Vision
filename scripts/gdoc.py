@@ -7,8 +7,8 @@
   gdoc.py stamp-import <doc> <url>      put "IMPORTED into <url>" on top of the Doc and lock it (read-only)
   gdoc.py login <client.json>           one-time sign-in; prints the GOOGLE_OAUTH secret on stdout
 
-An export also puts "NEW VERSION AVAILABLE: <link>" on top of the previous export (PREVIOUS_EXPORT, a link)
-and locks it. Locking uses Drive's content restriction (the Doc's owner can unlock it in Drive); the notice
+An export also puts "NEW VERSION AVAILABLE: <link>" on top of the previous export (PREVIOUS_EXPORT, a link),
+locks it and moves it into a folder "archive" next to it (its link stays the same). Locking uses Drive's content restriction (the Doc's owner can unlock it in Drive); the notice
 needs the Google Docs API to be enabled in the Google Cloud project.
 
 Google Doc layout (export writes it, import reads it). Everything before the first heading is front matter:
@@ -42,6 +42,8 @@ CONTENT = Path("_content.md")
 MEDIA = Path("media")
 DOCX = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
 GDOC = "application/vnd.google-apps.document"
+FOLDER = "application/vnd.google-apps.folder"
+ARCHIVE = "archive"  # superseded exports are moved into this folder, next to where they were
 SCOPE = "https://www.googleapis.com/auth/drive"
 TOKEN_URL = "https://oauth2.googleapis.com/token"
 # Row label in the "Document information" table -> frontmatter key. All rows are required.
@@ -247,6 +249,22 @@ def stamp(doc: str, before: str, link_text: str, url: str, after: str = "") -> N
     lock(True)
 
 
+def archive(doc: str) -> str:
+    """Move a Doc into the folder ARCHIVE next to it (created if missing); its link stays the same."""
+    target, token = doc_id(doc), access_token()
+    headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
+    drive = "https://www.googleapis.com/drive/v3/files"
+    parent = json.loads(call("GET", f"{drive}/{target}?fields=parents&supportsAllDrives=true", headers=headers))["parents"][0]
+    query = urllib.parse.quote(f"name = '{ARCHIVE}' and '{parent}' in parents and mimeType = '{FOLDER}' and trashed = false")
+    found = json.loads(call("GET", f"{drive}?q={query}&fields=files(id)&supportsAllDrives=true&includeItemsFromAllDrives=true",
+                            headers=headers))["files"]
+    folder = found[0]["id"] if found else json.loads(call(
+        "POST", f"{drive}?supportsAllDrives=true", json.dumps({"name": ARCHIVE, "mimeType": FOLDER, "parents": [parent]}).encode(),
+        headers))["id"]
+    call("PATCH", f"{drive}/{target}?addParents={folder}&removeParents={parent}&supportsAllDrives=true", b"{}", headers)
+    return f"https://drive.google.com/drive/folders/{folder}"
+
+
 def cmd_stamp_import(doc: str, url: str) -> None:
     today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     stamp(doc, f"IMPORTED on {today} into", url, url, " (version number follows when accepted). This Doc is now read-only.")
@@ -287,6 +305,10 @@ def cmd_export(folder: str = "", version: str = "") -> None:
             print(f"Marked the previous export {previous} as outdated and locked it.")
         except SystemExit as exc:  # the new Doc exists; a failed notice on the old one must not hide that
             print(f"Warning: could not mark the previous export {previous}: {exc}", file=sys.stderr)
+        try:
+            print(f"Moved the previous export into {archive(previous)}.")
+        except SystemExit as exc:
+            print(f"Warning: could not move the previous export {previous} into '{ARCHIVE}': {exc}", file=sys.stderr)
 
 
 def cmd_login(client_file: str) -> None:
