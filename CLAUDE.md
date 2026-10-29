@@ -2,67 +2,25 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Build Commands
+## Commands
 
 ```bash
-make build-index          # Render IPBES_Data_Vision.qmd → _site/index.html
-make build-older-release  # Render older-releases.qmd → _site/older-releases.html
-make build-pdf            # Render versioned PDF → build/ and _site/assets/...-latest.pdf
-make build                # Run all targets (HTML pages + PDF)
-make clean                # Remove _site/, build/, and LaTeX temp files
+make preview   # quarto preview of IPBES_Data_Vision.qmd
+make build     # python3 scripts/release.py build → _site/ + build/*-draft.pdf (version "draft", no DOI)
+make clean
+python3 scripts/release.py prepare --version 1.2 --prerelease --notes "a; b"   # pre-release build, no Zenodo
 ```
 
-PDF build accepts an optional injected DOI:
-```bash
-IPBES_DOI="10.5281/zenodo.XXXXXXX" make build-pdf
-```
+There is no test suite; CI (`pr-check.yml`) checks that `release.py build` renders. `release.py prepare` without `--prerelease`, `release.py publish` and everything in `scripts/gdoc.py` except local conversion talk to Zenodo or Google; never run them against production Zenodo (`ZENODO_TARGET=production`) without being asked.
 
-Local requirements: R, Quarto, TinyTeX.
+Requirements: R (`rmarkdown`, `knitr`; `jsonlite` comes with them), Quarto (bundles Pandoc), TinyTeX (LuaLaTeX), Python 3 (stdlib only; `gdoc.py` uses Google's REST APIs directly).
 
 ## Architecture
 
-### Single Source of Truth
-
-`IPBES_Data_Vision.qmd` is the canonical source for both content and release metadata. Its YAML frontmatter drives everything — HTML subtitle, PDF title page, Zenodo DOI reservation, and the release workflow. Required frontmatter fields:
-
-- `title`, `version`, `release_date`, `concept_doi`, `contact_email`, `release_notes`, `editors`
-
-When `IPBES_DOI` env var is absent, outputs show `"Will be inserted upon release"` as a placeholder.
-
-### PDF Title Page
-
-`templates/title.tex` is a Pandoc template partial referenced from the frontmatter (`template-partials`). It reads metadata fields directly from frontmatter — nothing is hardcoded. The `pdf` format is only rendered when `IPBES_BUILD_PDF=true` is set (to avoid slow PDF builds during HTML-only development).
-
-### Older Releases Page
-
-`older-releases.qmd` queries Zenodo live using `concept_doi` from the main document's frontmatter. It does **not** read a local `releases/` folder or any committed PDFs.
-
-### CI/CD Workflows
-
-**`pr-check.yml`** — validates that HTML and PDF build cleanly; runs on PRs to `main`. Injects `IPBES_VERSION=pr-<#>`, `IPBES_BUILD_PDF=true`, `IPBES_DOI=PENDING`.
-
-**`release.yml`** — triggered on GitHub Release published. Pipeline:
-1. Resolves Zenodo target (`sandbox` vs `production`) via `ZENODO_TARGET` repo variable
-2. Reads `version` and `concept_doi` from frontmatter via Rscript
-3. Reserves a new Zenodo version DOI via the Zenodo API (Python/urllib, no third-party libraries)
-4. Injects the reserved DOI as `IPBES_DOI` env var for the build
-5. Appends the DOI to the GitHub release notes
-6. Builds HTML website and PDF artifact
-7. Uploads PDF to Zenodo draft (as draft — requires manual publish on Zenodo)
-8. Uploads PDF to GitHub release assets
-9. Deploys `_site/` to `gh-pages` branch
-
-### Zenodo Environment Switching
-
-Switch between sandbox and production by changing the `ZENODO_TARGET` repository variable (`sandbox` | `production`). Each target has its own API base URL variable and token secret:
-
-| Target     | URL variable              | Token secret           |
-|------------|---------------------------|------------------------|
-| production | `ZENODO_API_BASE`         | `ZENODO_TOKEN`         |
-| sandbox    | `ZENODO_SANDBOX_API_BASE` | `ZENODO_SANDBOX_TOKEN` |
-
-### Governance Rules
-
-- Metadata in outputs must always come from frontmatter, never hardcoded.
-- `IMPLEMENTATION_PLAN.md` and `README.md` must be updated when architecture or workflow changes.
-- All Zenodo API calls in CI use Python stdlib only (no `requests`, no extra dependencies).
+- The text lives in `_content.md`, included by `IPBES_Data_Vision.qmd`, whose frontmatter holds `title`, `produced_by`, `publisher`, `contact_email`, `editors` and a `zenodo:` block (`concept_doi`, `sandbox_concept_doi`, `access_right`, `license`). Version, release date, release notes and DOI are never stored; they come from the release form.
+- `scripts/release.py` is the only build entry point. `render()` passes `version`, `release_date`, `release_year`, `doi`, `prerelease` both as `-M key=value` (for `templates/title.tex` and `{{< meta >}}`) and as `IPBES_<KEY>` env vars for the R chunks, because `-M` does not reach `rmarkdown::metadata`; `release_notes` goes only via env. `prepare` picks the tag itself (`v<version>` must be new; pre-releases get the next `v<version>-rc.<n>` from `git ls-remote`) and writes `build/release.json` for the workflows.
+- All admin workflows are `workflow_dispatch` forms linked from `admin.qmd` (the admin panel, published but unlinked; it shows live status via the public GitHub API). `release.yml` builds and creates the GitHub release itself (a release created with `GITHUB_TOKEN` would not trigger another workflow); a release reserves a DOI via Zenodo `newversion` and attaches `site.tar.gz` + `release.json`; `publish.yml` mints the draft and deploys that site to the `gh-pages` root (production target only). Pre-releases deploy to `gh-pages:/preview/` and are archived only as GitHub release assets.
+- Zenodo sandbox pre-reserves DOIs with the production prefix `10.5281`; `Zenodo.doi()` rewrites them to `10.5072`, which is what the sandbox mints.
+- `scripts/gdoc.py`: import = Drive export as docx → Pandoc JSON AST (`--shift-heading-level-by=1`). Blocks before the first non-"contents" heading are front matter: a "Document information" table (rows in `FIELDS` → frontmatter keys) and an "Editors" table (`Name | Institution | ORCID`), validated with a clear error list; the rest goes back through Pandoc to Markdown, typed heading numbers stripped. Export uploads the same layout as a new Google Doc (Drive converts the .docx). Auth is OAuth as a user (`GOOGLE_OAUTH` = client id/secret + refresh token from `gdoc.py login`, loopback redirect), so files are owned by that user. Export → import round-trips `_content.md` and the frontmatter unchanged.
+- `older-releases.qmd` lists releases (Zenodo API) and pre-releases (GitHub API) client-side, so it stays current without re-rendering.
+- Update `admin.qmd` and `README.md` when the workflow changes.

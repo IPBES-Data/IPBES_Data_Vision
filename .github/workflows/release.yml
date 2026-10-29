@@ -1,100 +1,105 @@
-name: Release Publish
+name: "Make a release or pre-release"
 
+# Started from the admin panel (Actions → this workflow → Run workflow).
+# Pre-release: tag v<version>-rc.<n>, built without DOI, PDF archived on the GitHub
+#   pre-release, site deployed to /preview/. Zenodo is not contacted.
+# Release: tag v<version>, DOI reserved and Zenodo draft filled; nothing public changes
+#   until the "Publish release" workflow is run.
 on:
-  release:
-    types: [published]
+  workflow_dispatch:
+    inputs:
+      kind:
+        description: "What do you want to make?"
+        type: choice
+        options:
+          - "Pre-release (for review, no DOI)"
+          - "Release (citable, with DOI)"
+      version:
+        description: "Version number, e.g. 1.2"
+        required: true
+      notes:
+        description: "What changed? Separate items with ;"
+        required: true
 
 permissions:
   contents: write
 
 concurrency:
-  group: release-pages
+  group: release
   cancel-in-progress: false
 
 jobs:
-  build_and_deploy:
+  release:
     runs-on: ubuntu-latest
     env:
-      IPBES_RELEASE_DATE: ${{ github.event.release.published_at }}
-      IPBES_BUILD_PDF: "true"
-      IPBES_OUTPUT_DIR: _site
-      ZENODO_TARGET: ${{ vars.ZENODO_TARGET }}
-      ZENODO_API_BASE: ${{ vars.ZENODO_API_BASE }}
-      ZENODO_SANDBOX_API_BASE: ${{ vars.ZENODO_SANDBOX_API_BASE }}
-
+      GH_TOKEN: ${{ github.token }}
+      VERSION: ${{ inputs.version }}
+      NOTES: ${{ inputs.notes }}
+      PRERELEASE: ${{ startsWith(inputs.kind, 'Pre-release') }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup R
-        id: setup-r
-        uses: r-lib/actions/setup-r@v2
+      - uses: r-lib/actions/setup-r@v2
         with:
           use-public-rspm: true
 
-      - name: Cache R packages
-        uses: actions/cache@v4
-        with:
-          path: ${{ env.R_LIBS_USER }}
-          key: ${{ runner.os }}-r-${{ steps.setup-r.outputs.installed-r-version }}-${{ hashFiles('**/DESCRIPTION') }}
-          restore-keys: ${{ runner.os }}-r-${{ steps.setup-r.outputs.installed-r-version }}-
-
-      - name: Install R dependencies
-        uses: r-lib/actions/setup-r-dependencies@v2
+      # Installs and caches the R packages
+      - uses: r-lib/actions/setup-r-dependencies@v2
         with:
           packages: |
             any::rmarkdown
             any::knitr
-            any::httr2
 
-      - name: Setup Quarto
-        uses: quarto-dev/quarto-actions/setup@v2
+      - uses: quarto-dev/quarto-actions/setup@v2
 
-      - name: Setup TinyTeX
-        uses: r-lib/actions/setup-tinytex@v2
+      - uses: r-lib/actions/setup-tinytex@v2
 
-      - name: Resolve Zenodo target config
+      - name: Build pre-release (no DOI, no Zenodo)
+        if: env.PRERELEASE == 'true'
+        run: python3 scripts/release.py prepare --version "$VERSION" --notes "$NOTES" --prerelease
+
+      - name: Reserve DOI, build, and fill the Zenodo draft
+        if: env.PRERELEASE != 'true'
         env:
+          ZENODO_TARGET: ${{ vars.ZENODO_TARGET }}
           ZENODO_TOKEN: ${{ secrets.ZENODO_TOKEN }}
           ZENODO_SANDBOX_TOKEN: ${{ secrets.ZENODO_SANDBOX_TOKEN }}
-        run: python3 scripts/release_pipeline.py --state-file .release-state.env resolve-target
+        run: python3 scripts/release.py prepare --version "$VERSION" --notes "$NOTES"
 
-      - name: Read version and concept DOI from frontmatter
-        id: frontmatter
-        run: python3 scripts/release_pipeline.py --state-file .release-state.env read-frontmatter --qmd IPBES_Data_Vision.qmd
+      - name: Create the GitHub release with PDF and site attached
+        run: |
+          tag=$(jq -r .tag build/release.json)
+          jq -r .notes build/release.json > build/notes.md
+          if [ "$PRERELEASE" = true ]; then
+            printf '\n\nPre-release for review. No DOI; not for citation.\n' >> build/notes.md
+            flag=--prerelease
+          else
+            printf '\n\nDOI reserved: %s (active after "Publish release" is run)\n' "$(jq -r .doi build/release.json)" >> build/notes.md
+            flag=
+          fi
+          tar -czf build/site.tar.gz -C _site .
+          gh release create "$tag" build/*.pdf build/site.tar.gz build/release.json \
+            --target "$GITHUB_SHA" --title "Version ${tag#v}" --notes-file build/notes.md $flag
+          echo "TAG=$tag" >> "$GITHUB_ENV"
 
-      - name: Reserve Zenodo version DOI
-        id: reserve_doi
-        run: python3 scripts/release_pipeline.py --state-file .release-state.env reserve-doi
-
-      - name: Append version DOI to release notes
-        env:
-          RESERVED_DOI: ${{ steps.reserve_doi.outputs.reserved_doi }}
-          RELEASE_ID: ${{ github.event.release.id }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: python3 scripts/release_pipeline.py --state-file .release-state.env append-github-release-doi
-
-      - name: Build website and PDF artifacts
-        id: build_artifacts
-        run: python3 scripts/release_pipeline.py --state-file .release-state.env build-artifacts --qmd IPBES_Data_Vision.qmd --build-dir build --output-dir _site
-
-      - name: Upload PDF and release notes to Zenodo draft
-        env:
-          RELEASE_ID: ${{ github.event.release.id }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: python3 scripts/release_pipeline.py --state-file .release-state.env upload-zenodo-draft --pdf-file "${{ steps.build_artifacts.outputs.pdf_path }}"
-
-      - name: Upload PDF to GitHub release
-        uses: softprops/action-gh-release@v2
-        with:
-          files: ${{ steps.build_artifacts.outputs.pdf_path }}
-          overwrite_files: true
-
-      - name: Deploy website to gh-pages branch
+      - name: Deploy pre-release to /preview/
+        if: env.PRERELEASE == 'true'
         uses: peaceiris/actions-gh-pages@v4
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_branch: gh-pages
+          github_token: ${{ github.token }}
           publish_dir: _site
-          force_orphan: true
-          enable_jekyll: false
+          destination_dir: preview
+
+      - name: Say what happens next
+        run: |
+          url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/releases/tag/$TAG"
+          if [ "$PRERELEASE" = true ]; then
+            echo "### Pre-release $TAG is ready" >> "$GITHUB_STEP_SUMMARY"
+            echo "- Preview: https://ipbes-data.github.io/IPBES_Data_Vision/preview/" >> "$GITHUB_STEP_SUMMARY"
+            echo "- PDF and notes: $url" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "### Release $TAG is prepared, but not public yet" >> "$GITHUB_STEP_SUMMARY"
+            echo "1. Check the Zenodo draft: $(jq -r .draft_url build/release.json)" >> "$GITHUB_STEP_SUMMARY"
+            echo "2. Check the PDF: $url" >> "$GITHUB_STEP_SUMMARY"
+            echo "3. If both are right, run **Publish release** from the admin panel." >> "$GITHUB_STEP_SUMMARY"
+          fi

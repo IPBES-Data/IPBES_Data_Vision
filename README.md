@@ -1,95 +1,32 @@
 # IPBES Data Management Vision
 
-Living-document implementation for the **IPBES Data Management Vision** using Quarto and R.
-
-## Repository
+Living-document implementation of the **IPBES Data Management Vision**, built with Quarto and R and published as a website and a versioned PDF with a Zenodo DOI per release.
 
 - Source repo: <https://github.com/IPBES-Data/IPBES_Data_Vision>
 - Website: <https://ipbes-data.github.io/IPBES_Data_Vision/>
+- **Admin panel** (import/export Google Doc, pre-releases, releases): <https://ipbes-data.github.io/IPBES_Data_Vision/admin.html>, source `admin.qmd`, which also documents the one-time setup.
 
-## Source of Truth
+## Where things are
 
-- Main source document: `IPBES_Data_Vision.qmd`
-- Metadata is authoritative in YAML frontmatter of `IPBES_Data_Vision.qmd`, including:
-  - `title`
-  - `version`
-  - `release_date`
-  - `concept_doi`
-  - `contact_email`
-  - `release_notes`
-  - `editors`
+- `_content.md`: the text of the Vision. The Google Doc import overwrites it.
+- `IPBES_Data_Vision.qmd`: frontmatter (title, editors, contact, Zenodo settings), release metadata, citation; includes `_content.md`.
+- Version, release date, release notes and DOI are not stored in the source; they come from the release form and are added at build time.
+- `scripts/release.py`: builds and releases (Zenodo). `scripts/gdoc.py`: Google Doc import/export. Both use the Python standard library only.
 
-The same frontmatter metadata drives HTML metadata display and PDF title pages/citation content. The version DOI is injected at release time via `IPBES_DOI`; when missing, outputs show `**Will be inserted upon release**`.
+## Build locally
 
-## Build
+Requirements: R (`rmarkdown`, `knitr`), Quarto, TinyTeX, Python 3.
 
-Requirements:
+- `make preview`: live preview while editing
+- `make build`: render the website into `_site/` and the PDF into `build/`, marked as an unreleased draft
+- `make clean`: remove rendered output
 
-- R
-- Quarto
-- TinyTeX (for PDF builds)
+## Workflows (all started from the admin panel)
 
-Commands:
-
-- `make build-index`
-  - Render `_site/index.html`
-- `make build-older-release`
-  - Render `_site/older-releases.html`
-- `make build-release-doc`
-  - Render hidden `_site/release.html`
-- `make build-setup-doc`
-  - Render hidden `_site/setup.html`
-- `make build-help-admin-doc`
-  - Render hidden `_site/help_admin.html`
-- `make build-pdf`
-  - Build versioned PDF from frontmatter version into `build/`
-  - Update `_site/assets/IPBES-Data-Management-Vision-latest.pdf`
-- `make release-local`
-  - Run shared release pipeline locally (`scripts/release_pipeline.py`)
-  - Resolve Zenodo target, read frontmatter, reserve DOI, build HTML/PDF, upload PDF + notes to Zenodo draft
-  - Uses same Zenodo env contract as CI (`ZENODO_TARGET`, `ZENODO_API_BASE`, `ZENODO_SANDBOX_API_BASE`, `ZENODO_TOKEN`, `ZENODO_SANDBOX_TOKEN`)
-  - Does **not** publish/mint Zenodo draft and does **not** deploy `gh-pages`
-- `make build`
-  - Run all targets above (public pages, hidden docs, and latest PDF)
-
-## Output Structure
-
-- Published website output: `_site/`
-- Current page: `_site/index.html`
-- All releases page: `_site/older-releases.html`
-- Hidden admin docs:
-  - `_site/release.html`
-  - `_site/setup.html`
-  - `_site/help_admin.html`
-- Latest PDF alias: `_site/assets/IPBES-Data-Management-Vision-latest.pdf`
-- Transient local PDF build artifact: `build/IPBES-Data-Management-Vision-<version>.pdf`
-
-## All Releases Behavior
-
-- `older-releases.qmd` queries Zenodo records using `concept_doi` from `IPBES_Data_Vision.qmd`.
-- It lists available versions with version DOI plus Zenodo download/record links.
-- No local `releases/` folder is used or published.
-
-## Release Workflow (GitHub)
-
-- PR checks: `.github/workflows/pr-check.yml`
-- Release publish: `.github/workflows/release.yml`
-- Shared release runner: `scripts/release_pipeline.py` (used by both local release and GitHub release workflow).
-- Release workflow reserves a Zenodo version DOI before rendering, injects it via `IPBES_DOI`, appends the DOI to GitHub release notes, builds website/PDF artifacts, uploads PDF + notes to Zenodo draft, uploads the PDF to the release, and deploys `_site/` to `gh-pages`.
-- Zenodo DOI reservation uses robust fallback lookup (conceptrecid depositions, conceptdoi depositions, then conceptdoi records) and fails with classified diagnostics on ownership/authorization issues.
-- Required release secrets/variables:
-  - `ZENODO_TARGET` (repository variable: `sandbox` or `production`; defaults to `production` if unset/invalid)
-  - `ZENODO_API_BASE` (repository variable: production API base URL)
-  - `ZENODO_SANDBOX_API_BASE` (repository variable: sandbox API base URL)
-  - `ZENODO_TOKEN` (secret used when `ZENODO_TARGET=production`)
-  - `ZENODO_SANDBOX_TOKEN` (secret used when `ZENODO_TARGET=sandbox`)
-- Switch environments by changing only `ZENODO_TARGET`.
-- Release workflow reads `version` and `concept_doi` from `IPBES_Data_Vision.qmd` frontmatter and derives Zenodo concept record id from `concept_doi`.
-- Release workflow keeps Zenodo deposition in draft state (`submitted=false`); mint/publish is manual in Zenodo UI.
-
-## Key Documents
-
-- `IMPLEMENTATION_PLAN.md`
-- `RELEASE.qmd`
-- `setup.qmd`
-- `help_admin.qmd`
+| Workflow | Result |
+|---|---|
+| Import text from Google Doc | Pull request with the new text, title and editors |
+| Export text to Google Doc | Creates a new Google Doc in your Drive with the current text and bibliographic tables |
+| Make a release or pre-release | Pre-release `v1.2-rc.<n>`: PDF on the GitHub pre-release, site at `/preview/`, no DOI. Release `v1.2`: DOI reserved, Zenodo draft filled, nothing public yet |
+| Publish release | Zenodo draft published (DOI minted), site deployed |
+| Check website and PDF build | Runs on every pull request; the rendered site and PDF are downloadable |

@@ -1,0 +1,27 @@
+name: "Export text to Google Doc"
+
+# Started from the admin panel. Creates a new Google Doc (owned by the account that signed in
+# with `scripts/gdoc.py login`) with the current bibliographic tables and text.
+on:
+  workflow_dispatch:
+    inputs:
+      folder:
+        description: "Google Drive folder link (leave empty for the usual folder)"
+        required: false
+
+permissions:
+  contents: read
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    env:
+      GOOGLE_OAUTH: ${{ secrets.GOOGLE_OAUTH }}
+      FOLDER: ${{ inputs.folder || vars.GDRIVE_FOLDER_ID }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: quarto-dev/quarto-actions/setup@v2
+
+      - name: Create the Google Doc
+        run: python3 scripts/gdoc.py export "$FOLDER" | tee -a "$GITHUB_STEP_SUMMARY"

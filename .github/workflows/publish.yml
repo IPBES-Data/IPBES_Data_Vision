@@ -1,0 +1,69 @@
+name: "Publish release"
+
+# Run from the admin panel after checking the Zenodo draft made by "Make a release or pre-release".
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release to publish, e.g. v1.2 (leave empty for the newest release)"
+        required: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    env:
+      TAG: ${{ inputs.tag }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download release.json and site from the GitHub release
+        id: release
+        run: |
+          [ -n "$TAG" ] || TAG=$(gh release list --exclude-pre-releases --limit 1 --json tagName -q '.[0].tagName')
+          echo "TAG=$TAG" >> "$GITHUB_ENV"
+          gh release download "$TAG" -p release.json -p site.tar.gz -D build
+          echo "doi=$(jq -r .doi build/release.json)" >> "$GITHUB_OUTPUT"
+          echo "target=$(jq -r .target build/release.json)" >> "$GITHUB_OUTPUT"
+
+      - name: Publish the Zenodo draft (mints the DOI)
+        env:
+          ZENODO_TOKEN: ${{ secrets.ZENODO_TOKEN }}
+          ZENODO_SANDBOX_TOKEN: ${{ secrets.ZENODO_SANDBOX_TOKEN }}
+        run: python3 scripts/release.py publish build/release.json
+
+      - name: Add the DOI to the release notes
+        env:
+          DOI: ${{ steps.release.outputs.doi }}
+        run: |
+          gh release view "$TAG" --json body -q .body | grep -v '^DOI reserved:' > build/notes.md
+          printf '\nVersion DOI: https://doi.org/%s (Zenodo %s)\n' "$DOI" "${{ steps.release.outputs.target }}" >> build/notes.md
+          gh release edit "$TAG" --notes-file build/notes.md
+
+      - name: Unpack site
+        run: mkdir _site && tar -xzf build/site.tar.gz -C _site
+
+      # Sandbox DOIs are test records, so only production releases replace the official site.
+      - name: Deploy site
+        if: steps.release.outputs.target == 'production'
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ github.token }}
+          publish_dir: _site
+
+      - name: Say what happened
+        run: |
+          echo "### $TAG is published" >> "$GITHUB_STEP_SUMMARY"
+          echo "- DOI: https://doi.org/${{ steps.release.outputs.doi }}" >> "$GITHUB_STEP_SUMMARY"
+          if [ "${{ steps.release.outputs.target }}" = production ]; then
+            echo "- Website updated: https://ipbes-data.github.io/IPBES_Data_Vision/" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "- Zenodo sandbox (test) release: the website was not changed." >> "$GITHUB_STEP_SUMMARY"
+          fi
