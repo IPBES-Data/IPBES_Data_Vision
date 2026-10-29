@@ -58,8 +58,8 @@ execute:
                display: grid; grid-row: span 4; grid-template-rows: subgrid; row-gap: 0.5rem; }
 #panel .card h3 { margin: 0; font-size: 1.1rem; }
 #panel .card p { margin: 0; }
-#panel .btn { align-self: start; }
-#panel .btn { display: block; text-align: center; background: #1f6f43; color: #fff; padding: 0.5rem 0.75rem;
+/* All buttons in a row get the height of the tallest one (shared subgrid row), text centred. */
+#panel .btn { align-self: stretch; display: flex; align-items: center; justify-content: center; text-align: center; background: #1f6f43; color: #fff; padding: 0.5rem 0.75rem;
               border-radius: 6px; text-decoration: none; font-weight: 600; }
 #panel .btn:hover { background: #18583a; }
 #panel .card p.status { color: #555; font-size: 0.85rem; }
