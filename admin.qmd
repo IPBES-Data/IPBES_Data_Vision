@@ -135,9 +135,15 @@ People who use the panel need *Write* access to the repository.
 
 ### How the Google Doc must be laid out
 
-- The title uses the **Title** paragraph style; section titles use **Heading 1** (sub-sections Heading 2, …). Typed numbers such as "I." or "2.1" in headings are removed; the website and PDF number sections themselves.
-- Before the first heading, a line `Editors: Name (Institution, ORCID); Name (Institution)` and optionally `Contact: someone@example.org`. Everything before the first heading (title, editors, table of contents) is metadata and is not copied into the text.
+Everything before the first heading is the front matter; the text of the Vision starts at the first **Heading 1**.
+
+- **Document information** table, two columns, one row per field: `Title`, `Produced by`, `Publisher`, `Contact e-mail`. All are required; only the second column is edited.
+- **Editors** table with the columns `Name | Institution | ORCID`, one row per editor; add or delete rows as needed. Institution and ORCID may be empty; an ORCID may be given as number or as orcid.org link.
+- Anything else before the first heading (notes, Google's table of contents) is ignored.
+- Section titles use **Heading 1** (sub-sections Heading 2, …). Typed numbers such as "I." or "2.1" in headings are removed; the website and PDF number sections themselves.
 - Suggestions must be accepted or rejected before importing; comments are not imported.
+
+If a table is missing or a value is invalid, the import stops without changing anything and lists what to fix (shown under the failed run's *details*).
 
 An export writes exactly this layout, so the easiest start is to run **Export to Google Doc** once and edit a copy of the result.
 

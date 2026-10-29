@@ -2,8 +2,10 @@
 title: "The IPBES long-term vision of data and knowledge management"
 subtitle: "Version {{< meta version >}} · {{< meta release_date >}}"
 # Version, release date, release notes and DOI are not stored here: scripts/release.py
-# adds them from the release form. Title and editors are updated by the Google Doc import;
-# the text itself is in _content.md.
+# adds them from the release form. title, produced_by, publisher, contact_email and
+# editors are updated by the Google Doc import; the text itself is in _content.md.
+produced_by: "IPBES task force on knowledge and data"
+publisher: "IPBES secretariat, Bonn, Germany"
 contact_email: "tsu.data@ipbes.net"
 editors:
   - name: "Rainer M Krug"
@@ -62,8 +64,8 @@ doi_text <- if (nzchar(doi)) {
 }
 editor_text <- paste(vapply(meta$editors, function(e) e$name, ""), collapse = ", ")
 citation_line <- sprintf(
-  "IPBES (%s): *%s*, version %s, %s (eds.). IPBES secretariat, Bonn, Germany. DOI: %s",
-  release_year, meta$title, version, editor_text, doi_text
+  "IPBES (%s): *%s*, version %s, %s (eds.). %s. DOI: %s",
+  release_year, meta$title, version, editor_text, meta$publisher, doi_text
 )
 ```
 

@@ -120,6 +120,7 @@ class Zenodo:
         metadata = draft["metadata"]
         metadata.update(
             title=fm["title"],
+            creators=[{"name": fm["produced_by"]}],
             version=version,
             publication_date=date,
             description=metadata.get("description", "").split(NOTES_HEADING)[0] + NOTES_HEADING + f"<ul>{notes}</ul>",
