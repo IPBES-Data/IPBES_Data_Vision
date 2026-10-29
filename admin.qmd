@@ -15,28 +15,30 @@ execute:
   <div class="card">
     <h3>1. Import</h3>
     <p>Bring in the edits from the Google Doc.</p>
-    <a class="btn" data-workflow="gdoc-import.yml">Import from Google Doc</a>
+    <a class="btn" data-workflow="gdoc-import.yml" title="Copies the text and the Document information and Editors tables from the Google Doc. Opens a page listing every change; Merge it to accept, Close it to discard. The website does not change. Form: Doc link (empty = usual Doc).">Import from Google Doc</a>
     <p class="status" data-status="gdoc-import.yml"></p>
   </div>
   <div class="card">
     <h3>2. Export</h3>
     <p>New Google Doc with the current text.</p>
-    <a class="btn" data-workflow="gdoc-export.yml">Export to Google Doc</a>
+    <a class="btn" data-workflow="gdoc-export.yml" title="Creates a new Google Doc in your Drive with the current text and the bibliographic tables. Existing Docs are not changed. The new Doc's link is shown under the run's details. Form: Drive folder (empty = usual folder).">Export to Google Doc</a>
     <p class="status" data-status="gdoc-export.yml"></p>
   </div>
   <div class="card">
     <h3>3. Release</h3>
     <p>Pre-release (review) or release (DOI).</p>
-    <a class="btn" data-workflow="release.yml">Make a release or pre-release</a>
+    <a class="btn" data-workflow="release.yml" title="Pre-release: a draft for review, no DOI, shown at the Pre-release preview. Release: a citable version; reserves a DOI and prepares a Zenodo draft, but nothing is public until Publish. Form: type, version (e.g. 1.2), what changed (separate items with ;).">Make a release or pre-release</a>
     <p class="status" data-status="release.yml"></p>
   </div>
   <div class="card">
     <h3>4. Publish</h3>
     <p>Make a prepared release public.</p>
-    <a class="btn" data-workflow="publish.yml">Publish release</a>
+    <a class="btn" data-workflow="publish.yml" title="After a Release: check the Zenodo draft and the PDF first. Publishing makes the DOI permanent and updates the website. This cannot be undone. Form: release (empty = newest).">Publish release</a>
     <p class="status" data-status="publish.yml"></p>
   </div>
 </div>
+
+<p class="hint">ℹ️ A button opens the task on GitHub (sign in if asked). There, click <b>Run workflow</b> on the right, fill in the form and click the green <b>Run workflow</b> button. Nothing happens until you do. Hover over a button for details.</p>
 
 <div id="waiting"></div>
 
@@ -45,16 +47,22 @@ execute:
 </div>
 
 <style>
-#panel .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0.75rem; margin: 0.5rem 0 1rem; }
-#panel .card { border: 1px solid #d7dee6; border-radius: 8px; padding: 0.75rem 1rem; display: flex; flex-direction: column; }
-#panel .card h3 { margin: 0 0 0.25rem; font-size: 1.1rem; }
-#panel .card p { margin: 0 0 0.6rem; flex-grow: 1; }
+/* Each card spans 4 rows of the grid (title, text, button, status) and shares them with its neighbours
+   via subgrid, so the buttons line up even when the texts differ in length. */
+#panel .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); column-gap: 0.75rem;
+               row-gap: 0; margin: 0.5rem 0 1rem; }
+#panel .card { border: 1px solid #d7dee6; border-radius: 8px; padding: 0.75rem 1rem; margin-bottom: 0.75rem;
+               display: grid; grid-row: span 4; grid-template-rows: subgrid; row-gap: 0.5rem; }
+#panel .card h3 { margin: 0; font-size: 1.1rem; }
+#panel .card p { margin: 0; }
+#panel .btn { align-self: start; }
 #panel .btn { display: block; text-align: center; background: #1f6f43; color: #fff; padding: 0.5rem 0.75rem;
               border-radius: 6px; text-decoration: none; font-weight: 600; }
 #panel .btn:hover { background: #18583a; }
-#panel .card p.status { color: #555; font-size: 0.85rem; margin: 0.5rem 0 0; flex-grow: 0; }
+#panel .card p.status { color: #555; font-size: 0.85rem; }
 #panel .waiting { background: #fff6d6; border-radius: 6px; padding: 0.5rem 0.75rem; margin: 0 0 0.5rem; }
 #panel .links { font-size: 0.9rem; }
+#panel .hint { font-size: 0.9rem; background: #eef4fb; border-radius: 6px; padding: 0.5rem 0.75rem; }
 </style>
 
 <script>
@@ -66,11 +74,9 @@ execute:
   const waiting = document.getElementById("waiting");
   const notice = (html) => waiting.insertAdjacentHTML("beforeend", `<p class="waiting">${html}</p>`);
 
-  document.querySelectorAll("[data-workflow]").forEach((a) => {
-    a.href = `${gh}/actions/workflows/${a.dataset.workflow}`;
-    a.target = "_blank";
-  });
-  document.querySelectorAll("[data-href]").forEach((a) => { a.href = gh + a.dataset.href; a.target = "_blank"; });
+  document.querySelectorAll("[data-workflow]").forEach((a) => { a.href = `${gh}/actions/workflows/${a.dataset.workflow}`; });
+  document.querySelectorAll("[data-href]").forEach((a) => { a.href = gh + a.dataset.href; });
+  document.querySelectorAll("#panel a").forEach((a) => { a.target = "_blank"; a.rel = "noopener noreferrer"; });
 
   // Last run of each task.
   document.querySelectorAll("[data-status]").forEach(async (p) => {
@@ -95,7 +101,7 @@ execute:
 </script>
 ```
 
-The buttons open the task on GitHub. You need to be signed in with an account that may edit this repository; there, click **Run workflow**, fill in the form and click the green **Run workflow** button. Each task takes a few minutes; its status appears above (reload the page).
+You need to be signed in to GitHub with an account that may edit this repository. Each task takes a few minutes; its status appears above (reload the page).
 
 ## What the buttons do
 
