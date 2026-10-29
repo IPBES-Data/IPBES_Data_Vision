@@ -1,12 +1,12 @@
-name: Publish release
+name: "Publish release"
 
-# Run after reviewing the Zenodo draft created by the Release workflow.
+# Run from the admin panel after checking the Zenodo draft made by "Make a release or pre-release".
 on:
   workflow_dispatch:
     inputs:
       tag:
-        description: "Release tag to publish, e.g. v1.2"
-        required: true
+        description: "Release to publish, e.g. v1.2 (leave empty for the newest release)"
+        required: false
 
 permissions:
   contents: write
@@ -27,6 +27,8 @@ jobs:
       - name: Download release.json and site from the GitHub release
         id: release
         run: |
+          [ -n "$TAG" ] || TAG=$(gh release list --exclude-pre-releases --limit 1 --json tagName -q '.[0].tagName')
+          echo "TAG=$TAG" >> "$GITHUB_ENV"
           gh release download "$TAG" -p release.json -p site.tar.gz -D build
           echo "doi=$(jq -r .doi build/release.json)" >> "$GITHUB_OUTPUT"
           echo "target=$(jq -r .target build/release.json)" >> "$GITHUB_OUTPUT"
@@ -41,8 +43,8 @@ jobs:
         env:
           DOI: ${{ steps.release.outputs.doi }}
         run: |
-          gh release view "$TAG" --json body -q .body > build/notes.md
-          printf '\n\nVersion DOI: https://doi.org/%s (Zenodo %s)\n' "$DOI" "${{ steps.release.outputs.target }}" >> build/notes.md
+          gh release view "$TAG" --json body -q .body | grep -v '^DOI reserved:' > build/notes.md
+          printf '\nVersion DOI: https://doi.org/%s (Zenodo %s)\n' "$DOI" "${{ steps.release.outputs.target }}" >> build/notes.md
           gh release edit "$TAG" --notes-file build/notes.md
 
       - name: Unpack site
@@ -55,3 +57,13 @@ jobs:
         with:
           github_token: ${{ github.token }}
           publish_dir: _site
+
+      - name: Say what happened
+        run: |
+          echo "### $TAG is published" >> "$GITHUB_STEP_SUMMARY"
+          echo "- DOI: https://doi.org/${{ steps.release.outputs.doi }}" >> "$GITHUB_STEP_SUMMARY"
+          if [ "${{ steps.release.outputs.target }}" = production ]; then
+            echo "- Website updated: https://ipbes-data.github.io/IPBES_Data_Vision/" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "- Zenodo sandbox (test) release: the website was not changed." >> "$GITHUB_STEP_SUMMARY"
+          fi

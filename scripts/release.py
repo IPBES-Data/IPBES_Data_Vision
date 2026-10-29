@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 """Build and release the IPBES Data Management Vision (Python stdlib only).
 
-  release.py build                       render site + PDF as an unreleased draft
-  release.py prepare --tag v1.2          release: reserve DOI, render, upload Zenodo draft
-  release.py prepare --tag v1.2-rc.1 --prerelease
-                                         pre-release: render without DOI, no Zenodo
-  release.py publish build/release.json  publish (mint) the Zenodo draft from prepare
+  release.py build                                 render site + PDF as an unreleased draft
+  release.py prepare --version 1.2 --notes "a; b"  release v1.2: reserve DOI, render, fill Zenodo draft
+  release.py prepare --version 1.2 --prerelease    pre-release v1.2-rc.<n>: render without DOI, no Zenodo
+  release.py publish build/release.json            publish (mint) the Zenodo draft from prepare
+
+`prepare` writes build/release.json (tag, version, notes, DOI, Zenodo draft) for the workflows.
 
 Zenodo is only contacted by `prepare` (release) and `publish`. The target comes from
 ZENODO_TARGET (sandbox | production, required) with ZENODO_SANDBOX_TOKEN / ZENODO_TOKEN.
@@ -41,23 +42,33 @@ def frontmatter() -> dict:
     return json.loads(out.stdout)
 
 
-def release_version(fm: dict, tag: str, prerelease: bool) -> str:
-    """Check the tag against the frontmatter version; return the version to print."""
-    version = str(fm["version"])
-    expected = f"v{version}"
-    if prerelease and not tag.startswith(expected + "-"):
-        sys.exit(f"Pre-release tag {tag!r} must look like {expected}-<suffix> (e.g. {expected}-rc.1).")
-    if not prerelease and tag != expected:
-        sys.exit(f"Release tag {tag!r} must be exactly {expected!r} (frontmatter version {version!r}).")
-    return tag[1:]
+def next_tag(version: str, prerelease: bool) -> str:
+    """v1.2 for a release (must be new), v1.2-rc.<n> (next free n) for a pre-release."""
+    if not re.fullmatch(r"\d+(\.\d+)*", version):
+        sys.exit(f"Version must look like 1.2 (numbers and dots), got {version!r}.")
+    out = subprocess.run(["git", "ls-remote", "--tags", "origin"], capture_output=True, text=True, check=True).stdout
+    tags = set(re.findall(r"refs/tags/([^\s^]+)", out))
+    if not prerelease:
+        if f"v{version}" in tags:
+            sys.exit(f"Version {version} has already been released (tag v{version} exists). Choose a new version.")
+        return f"v{version}"
+    rcs = [int(m.group(1)) for t in tags if (m := re.fullmatch(rf"v{re.escape(version)}-rc\.(\d+)", t))]
+    return f"v{version}-rc.{max(rcs, default=0) + 1}"
+
+
+def notes_markdown(notes: str) -> str:
+    """'First change; second change' (from the release form) -> Markdown bullet list."""
+    items = [item.strip() for item in re.split(r"[;\n]", notes or "") if item.strip()]
+    return "\n".join(f"- {item}" for item in items) or "- No release notes given."
 
 
 def render(meta: dict) -> Path:
     """Render the website and the PDF; meta goes to the templates (-M) and the R chunks (IPBES_*)."""
-    meta = {key: meta.get(key, "") for key in ("version", "release_date", "release_year", "doi", "prerelease")}
-    flags = [arg for key, value in meta.items() if value for arg in ("-M", f"{key}={value}")]
+    meta = {key: meta.get(key, "") for key in
+            ("version", "release_date", "release_year", "doi", "prerelease", "release_notes")}
+    flags = [arg for key, value in meta.items() if value and key != "release_notes" for arg in ("-M", f"{key}={value}")]
     env = dict(os.environ, **{f"IPBES_{key.upper()}": value for key, value in meta.items()})
-    pdf = BUILD / f"{PDF_PREFIX}-v{meta['version']}.pdf"
+    pdf = BUILD / f"{PDF_PREFIX}-{'draft' if meta['version'] == 'draft' else 'v' + meta['version']}.pdf"
     subprocess.run(["quarto", "render", "--to", "html", *flags], env=env, check=True)
     subprocess.run(["quarto", "render", QMD, "--to", "pdf", "--output", pdf.name, "--output-dir", str(BUILD), *flags],
                    env=env, check=True)
@@ -103,10 +114,9 @@ class Zenodo:
         links = self.api("POST", f"/api/deposit/depositions/{latest['id']}/actions/newversion")["links"]
         return self.api("GET", links["latest_draft"])
 
-    def fill_draft(self, draft: dict, fm: dict, version: str, date: str, pdf: Path) -> None:
+    def fill_draft(self, draft: dict, fm: dict, version: str, date: str, notes: str, pdf: Path) -> None:
         settings = fm["zenodo"]
-        notes = "".join(f"<li>{html.escape(line.lstrip('- ').strip())}</li>"
-                        for line in str(fm.get("release_notes", "")).splitlines() if line.strip())
+        notes = "".join(f"<li>{html.escape(line[2:])}</li>" for line in notes.splitlines())
         metadata = draft["metadata"]
         metadata.update(
             title=fm["title"],
@@ -126,17 +136,17 @@ class Zenodo:
 
 
 def cmd_build(args) -> None:
-    fm = frontmatter()
-    render({"version": f"{fm['version']}-draft", "release_date": "unreleased",
-            "release_year": str(datetime.date.today().year)})
+    render({"version": "draft", "release_date": "unreleased", "release_year": str(datetime.date.today().year)})
 
 
 def cmd_prepare(args) -> None:
     fm = frontmatter()
-    version = release_version(fm, args.tag, args.prerelease)
-    today = datetime.date.today()
-    meta = {"version": version, "release_date": today.isoformat(), "release_year": str(today.year)}
-    record = {"tag": args.tag, "version": version, "prerelease": args.prerelease}
+    tag = next_tag(args.version, args.prerelease)
+    version, notes, today = tag[1:], notes_markdown(args.notes), datetime.date.today()
+    meta = {"version": version, "release_date": today.isoformat(), "release_year": str(today.year),
+            "release_notes": notes}
+    record = {"tag": tag, "version": version, "prerelease": args.prerelease, "notes": notes}
+    print(f"Preparing {'pre-release' if args.prerelease else 'release'} {tag}")
 
     if args.prerelease:
         render(dict(meta, prerelease="true"))
@@ -146,7 +156,7 @@ def cmd_prepare(args) -> None:
         doi = zenodo.doi(draft["metadata"]["prereserve_doi"]["doi"])
         print(f"Reserved {doi} on Zenodo {zenodo.target} (draft {draft['id']})")
         pdf = render(dict(meta, doi=doi))
-        zenodo.fill_draft(draft, fm, version, meta["release_date"], pdf)
+        zenodo.fill_draft(draft, fm, version, meta["release_date"], notes, pdf)
         record.update(doi=doi, draft_id=draft["id"], target=zenodo.target,
                       draft_url=f"{zenodo.base}/deposit/{draft['id']}")
         print(f"Zenodo draft ready for review: {record['draft_url']}")
@@ -168,7 +178,8 @@ def main() -> None:
     sub = parser.add_subparsers(dest="command", required=True)
     sub.add_parser("build").set_defaults(func=cmd_build)
     prepare = sub.add_parser("prepare")
-    prepare.add_argument("--tag", required=True)
+    prepare.add_argument("--version", required=True, help="e.g. 1.2")
+    prepare.add_argument("--notes", default="", help="release notes, items separated by ';'")
     prepare.add_argument("--prerelease", action="store_true")
     prepare.set_defaults(func=cmd_prepare)
     publish = sub.add_parser("publish")

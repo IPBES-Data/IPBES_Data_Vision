@@ -1,4 +1,4 @@
-name: PR Checks
+name: "Check website and PDF build"
 
 on:
   pull_request:

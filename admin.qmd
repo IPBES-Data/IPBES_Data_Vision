@@ -1,93 +1,155 @@
 ---
-title: "Admin: Editing and Releases"
+title: "Admin panel"
 format:
   html:
     output-file: admin.html
-    toc: true
-    number-sections: true
+    toc: false
 execute:
   echo: false
 ---
 
-This page is for maintainers. It is published with the site but not linked from it.
+This page is for the people who manage the Vision. It is published with the website but not linked from it. The buttons open GitHub, where you need to be signed in with an account that may edit this repository; there, click **Run workflow**, fill in the form and click the green **Run workflow** button. Each task takes a few minutes; its status appears here (reload the page).
 
-## Overview
+```{=html}
+<div id="panel" data-repo="IPBES-Data/IPBES_Data_Vision">
 
-```{mermaid}
-flowchart TD
-  E["Edit on a branch, open PR"] --> C["PR check: renders HTML + PDF (downloadable artifact)"]
-  C --> M["Merge to main"]
-  M --> P["GitHub pre-release v1.2-rc.1"]
-  M --> R["GitHub release v1.2"]
-  P --> P1["Build without DOI, attach PDF, deploy to /preview/"]
-  R --> R1["Reserve DOI, build, upload Zenodo draft, attach PDF"]
-  R1 --> Q{"Zenodo draft + PDF OK?"}
-  Q -->|yes| PUB["Run 'Publish release' workflow"]
-  PUB --> PUB1["Mint DOI on Zenodo, deploy site, add DOI to release notes"]
-  Q -->|no| X["Delete the Zenodo draft and the GitHub release + tag"]
+<div class="card">
+  <h3>1. Bring in the edits from Google Docs</h3>
+  <p>Copies the text, title and editors from the Google Doc. Nothing changes on the website yet: you get a page showing every change, where you accept (<b>Merge</b>) or discard (<b>Close</b>) it.</p>
+  <a class="btn" data-workflow="gdoc-import.yml">Import from Google Doc</a>
+  <p class="status" data-status="gdoc-import.yml"></p>
+  <div id="imports"></div>
+</div>
+
+<div class="card">
+  <h3>2. Start a new round of editing</h3>
+  <p>Writes the current text into the export Google Doc. Make a copy of it in Google Drive (<i>File → Make a copy</i>) to edit; the editing Doc itself is never overwritten.</p>
+  <a class="btn" data-workflow="gdoc-export.yml">Export to Google Doc</a>
+  <p class="status" data-status="gdoc-export.yml"></p>
+</div>
+
+<div class="card">
+  <h3>3. Make a pre-release or a release</h3>
+  <p>Choose <b>Pre-release</b> to share a draft for review: no DOI, archived on GitHub, shown at <a href="preview/">/preview/</a>.<br>
+     Choose <b>Release</b> for a citable version: a DOI is reserved and a Zenodo draft prepared, but nothing is public until step 4.<br>
+     The form asks for the version number (e.g. <code>1.2</code>) and what changed (separate items with <code>;</code>).</p>
+  <a class="btn" data-workflow="release.yml">Make a release or pre-release</a>
+  <p class="status" data-status="release.yml"></p>
+</div>
+
+<div class="card">
+  <h3>4. Publish a release</h3>
+  <p>After step 3 (Release): check the Zenodo draft and the PDF, then publish. This makes the DOI permanent and updates the website.</p>
+  <div id="pending"></div>
+  <a class="btn" data-workflow="publish.yml">Publish release</a>
+  <p class="status" data-status="publish.yml"></p>
+</div>
+
+<div class="card links">
+  <h3>Useful links</h3>
+  <ul>
+    <li><a href="index.html">Website</a> · <a href="preview/">Latest pre-release preview</a> · <a href="older-releases.html">All releases</a></li>
+    <li><a data-href="/releases">Releases and pre-releases on GitHub</a> (PDFs and release notes)</li>
+    <li><a data-href="/pulls">Open changes waiting for review</a></li>
+    <li><a href="https://zenodo.org/me/uploads">Zenodo uploads</a> · <a href="https://sandbox.zenodo.org/me/uploads">Zenodo sandbox (tests)</a></li>
+  </ul>
+</div>
+
+</div>
+
+<style>
+#panel .card { border: 1px solid #d7dee6; border-radius: 8px; padding: 1rem 1.25rem; margin: 1rem 0; }
+#panel .card h3 { margin-top: 0; }
+#panel .btn { display: inline-block; background: #1f6f43; color: #fff; padding: 0.5rem 1rem;
+              border-radius: 6px; text-decoration: none; font-weight: 600; }
+#panel .btn:hover { background: #18583a; }
+#panel .status { color: #555; font-size: 0.9rem; margin: 0.5rem 0 0; }
+#panel .waiting { background: #fff6d6; border-radius: 6px; padding: 0.5rem 0.75rem; }
+</style>
+
+<script>
+(() => {
+  const repo = document.getElementById("panel").dataset.repo;
+  const gh = `https://github.com/${repo}`;
+  const api = (path) => fetch(`https://api.github.com/repos/${repo}${path}`).then((r) => (r.ok ? r.json() : null));
+  const ago = (iso) => new Date(iso).toLocaleString();
+  const link = (href, text) => `<a href="${href}" target="_blank" rel="noopener noreferrer">${text}</a>`;
+
+  document.querySelectorAll("[data-workflow]").forEach((a) => {
+    a.href = `${gh}/actions/workflows/${a.dataset.workflow}`;
+    a.target = "_blank";
+  });
+  document.querySelectorAll("[data-href]").forEach((a) => { a.href = gh + a.dataset.href; a.target = "_blank"; });
+
+  // Last run of each task.
+  document.querySelectorAll("[data-status]").forEach(async (p) => {
+    const runs = await api(`/actions/workflows/${p.dataset.status}/runs?per_page=1`);
+    const run = runs && runs.workflow_runs[0];
+    if (!run) { p.textContent = runs ? "Not run yet." : ""; return; }
+    const state = run.status !== "completed" ? "⏳ running" :
+      run.conclusion === "success" ? "✅ succeeded" : `❌ ${run.conclusion}`;
+    p.innerHTML = `Last run: ${state}, started ${ago(run.created_at)} by ${run.actor.login} · ${link(run.html_url, "details")}`;
+  });
+
+  // Imports waiting for review.
+  api("/pulls?state=open&per_page=50").then((pulls) => {
+    const imports = (pulls || []).filter((p) => p.head.ref.startsWith("google-doc-import-"));
+    document.getElementById("imports").innerHTML = imports.length
+      ? `<p class="waiting">Waiting for review: ${imports.map((p) => link(p.html_url, p.title)).join(", ")}</p>` : "";
+  });
+
+  // Releases prepared but not yet published (their notes still say "DOI reserved").
+  api("/releases?per_page=20").then((releases) => {
+    const pending = (releases || []).filter((r) => !r.prerelease && /^DOI reserved:/m.test(r.body || ""));
+    document.getElementById("pending").innerHTML = pending.length
+      ? `<p class="waiting">Ready to publish: ${pending.map((r) => link(r.html_url, r.tag_name)).join(", ")}</p>` : "";
+  });
+})();
+</script>
 ```
 
-| Build | Version shown | DOI | Where it goes |
-|---|---|---|---|
-| Local / PR check | `1.2-draft` | "Will be inserted upon release" | `_site/`, PR artifact |
-| Pre-release `v1.2-rc.1` | `1.2-rc.1` | None (pre-release) | GitHub pre-release assets (the archive), `/preview/` on the site |
-| Release `v1.2` | `1.2` | Reserved Zenodo DOI | Zenodo draft, GitHub release assets; site after publishing |
+## One-time setup (for the technical admin)
 
-## Editing
+### GitHub
 
-1. Create a branch from `main` and edit `IPBES_Data_Vision.qmd`. `make preview` shows changes live; `make build` renders the site and PDF.
-2. Open a pull request. The PR check renders everything; download the `site` artifact from the check run to read the PDF.
-3. Merge when reviewed.
-
-## Pre-release (no DOI)
-
-1. On GitHub, *Releases → Draft a new release*.
-2. Tag: `v<version>-<suffix>`, e.g. `v1.2-rc.1`, where `<version>` is the `version` in the frontmatter.
-3. Tick **Set as a pre-release** and publish.
-4. The *Release* workflow attaches the PDF and the built site to the pre-release and deploys the site to <https://ipbes-data.github.io/IPBES_Data_Vision/preview/>. Zenodo is not contacted.
-
-Pre-releases are archived only as GitHub pre-releases: their PDFs are listed under *Pre-releases* on the All Releases page, marked as having no DOI. Deleting a GitHub pre-release removes it from the archive.
-
-## Release (with DOI)
-
-1. In a PR, set `version` (e.g. `"1.2"`) and `release_notes` in the frontmatter, and merge it.
-2. On GitHub, draft a new release with tag `v1.2` (exactly `v` + `version`), **not** a pre-release, and publish.
-3. The *Release* workflow:
-   - checks the tag against the frontmatter version,
-   - creates the next Zenodo version as a draft and reserves its DOI,
-   - renders site and PDF with the DOI and today's date,
-   - fills the Zenodo draft: PDF, title, version, date, editors, access right, licence, release notes,
-   - attaches PDF, `site.tar.gz` and `release.json` to the GitHub release.
-
-   The official site is **not** changed yet; the reserved DOI does not resolve until it is minted.
-4. Review the Zenodo draft (link in the run log and in `release.json`) and the attached PDF.
-5. *Actions → Publish release → Run workflow*, enter the tag (`v1.2`). This publishes the Zenodo draft (minting the DOI), deploys the attached site, and adds the DOI to the release notes.
-
-If the draft is wrong: delete the draft on Zenodo, delete the GitHub release and its tag, fix, and release again.
-
-## Zenodo targets
-
-`ZENODO_TARGET` (repository variable) selects `sandbox` or `production`; it must be set. The concept DOI for each target is in the frontmatter (`zenodo.concept_doi`, `zenodo.sandbox_concept_doi`). Sandbox releases are minted on sandbox.zenodo.org and are **never** deployed to the official site.
-
-Each target needs one manually published record first: create an upload on Zenodo, publish it, and put its concept ("all versions") DOI in the frontmatter.
-
-## Repository settings
+*Settings → Actions → General*: under *Workflow permissions* tick **Allow GitHub Actions to create and approve pull requests** (needed by the import). GitHub Pages must serve the `gh-pages` branch.
 
 *Settings → Secrets and variables → Actions*:
 
 | Name | Kind | Value |
 |---|---|---|
-| `ZENODO_TARGET` | variable | `sandbox` or `production` |
+| `ZENODO_TARGET` | variable | `sandbox` (tests) or `production` (real DOIs) |
 | `ZENODO_SANDBOX_TOKEN` | secret | sandbox.zenodo.org token with `deposit:write` and `deposit:actions` |
 | `ZENODO_TOKEN` | secret | zenodo.org token with `deposit:write` and `deposit:actions` |
+| `GOOGLE_SERVICE_ACCOUNT_KEY` | secret | JSON key of the Google service account (see below) |
+| `GDOC_ID` | variable | link or ID of the Google Doc where the text is edited |
+| `GDOC_EXPORT_ID` | variable | link or ID of the Google Doc that exports are written into |
 
-GitHub Pages must serve the `gh-pages` branch.
+People who use the panel need *Write* access to the repository.
 
-## Running a release locally
+### Google (works with a free Google account)
 
-The same script runs locally (needs R, Quarto, TinyTeX and the token in the environment):
+1. In the [Google Cloud console](https://console.cloud.google.com/) create a project, enable the **Google Drive API**, create a **service account** and add a **JSON key**; store the key's content as `GOOGLE_SERVICE_ACCOUNT_KEY`. No billing is needed.
+2. Share the editing Doc with the service account's e-mail address as **Viewer**.
+3. Create an empty Google Doc for exports (e.g. "Vision – export") in your own Drive and share it with the service account as **Editor**. A service account has no Drive storage of its own, so it fills this Doc rather than creating new ones.
+
+### How the Google Doc must be laid out
+
+- The title uses the **Title** paragraph style; section titles use **Heading 1** (sub-sections Heading 2, …). Typed numbers such as "I." or "2.1" in headings are removed; the website and PDF number sections themselves.
+- Before the first heading, a line `Editors: Name (Institution, ORCID); Name (Institution)` and optionally `Contact: someone@example.org`. Everything before the first heading (title, editors, table of contents) is metadata and is not copied into the text.
+- Suggestions must be accepted or rejected before importing; comments are not imported.
+
+An export writes exactly this layout, so the easiest start is to run **Export to Google Doc** once and edit a copy of the result.
+
+### Zenodo
+
+`ZENODO_TARGET` selects the Zenodo used by releases. The concept DOIs ("all versions" DOI) are in the frontmatter of `IPBES_Data_Vision.qmd` (`zenodo.concept_doi`, `zenodo.sandbox_concept_doi`). Sandbox releases never change the official website. If a prepared release is wrong, delete the draft on Zenodo and the release and its tag on GitHub, then make it again.
+
+### Without the panel
 
 ```bash
-ZENODO_TARGET=sandbox ZENODO_SANDBOX_TOKEN=... python3 scripts/release.py prepare --tag v1.2
-python3 scripts/release.py publish build/release.json
+make preview                                                    # live preview while editing
+make build                                                      # website + PDF as unreleased draft
+python3 scripts/release.py prepare --version 1.2 --prerelease   # pre-release build, no Zenodo
+GOOGLE_SERVICE_ACCOUNT_KEY="$(cat key.json)" python3 scripts/gdoc.py import <doc link>
 ```

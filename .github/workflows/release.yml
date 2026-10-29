@@ -1,11 +1,25 @@
-name: Release
+name: "Make a release or pre-release"
 
-# A GitHub pre-release (tag v1.2-rc.1) builds without DOI and deploys to /preview/.
-# A GitHub release (tag v1.2) reserves a Zenodo DOI and fills a Zenodo draft;
-# the "Publish release" workflow mints it and deploys the site.
+# Started from the admin panel (Actions → this workflow → Run workflow).
+# Pre-release: tag v<version>-rc.<n>, built without DOI, PDF archived on the GitHub
+#   pre-release, site deployed to /preview/. Zenodo is not contacted.
+# Release: tag v<version>, DOI reserved and Zenodo draft filled; nothing public changes
+#   until the "Publish release" workflow is run.
 on:
-  release:
-    types: [published]
+  workflow_dispatch:
+    inputs:
+      kind:
+        description: "What do you want to make?"
+        type: choice
+        options:
+          - "Pre-release (for review, no DOI)"
+          - "Release (citable, with DOI)"
+      version:
+        description: "Version number, e.g. 1.2"
+        required: true
+      notes:
+        description: "What changed? Separate items with ;"
+        required: true
 
 permissions:
   contents: write
@@ -15,11 +29,13 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  prepare:
+  release:
     runs-on: ubuntu-latest
     env:
-      TAG: ${{ github.event.release.tag_name }}
       GH_TOKEN: ${{ github.token }}
+      VERSION: ${{ inputs.version }}
+      NOTES: ${{ inputs.notes }}
+      PRERELEASE: ${{ startsWith(inputs.kind, 'Pre-release') }}
     steps:
       - uses: actions/checkout@v4
 
@@ -39,26 +55,51 @@ jobs:
       - uses: r-lib/actions/setup-tinytex@v2
 
       - name: Build pre-release (no DOI, no Zenodo)
-        if: github.event.release.prerelease
-        run: python3 scripts/release.py prepare --tag "$TAG" --prerelease
+        if: env.PRERELEASE == 'true'
+        run: python3 scripts/release.py prepare --version "$VERSION" --notes "$NOTES" --prerelease
 
       - name: Reserve DOI, build, and fill the Zenodo draft
-        if: ${{ !github.event.release.prerelease }}
+        if: env.PRERELEASE != 'true'
         env:
           ZENODO_TARGET: ${{ vars.ZENODO_TARGET }}
           ZENODO_TOKEN: ${{ secrets.ZENODO_TOKEN }}
           ZENODO_SANDBOX_TOKEN: ${{ secrets.ZENODO_SANDBOX_TOKEN }}
-        run: python3 scripts/release.py prepare --tag "$TAG"
+        run: python3 scripts/release.py prepare --version "$VERSION" --notes "$NOTES"
 
-      - name: Attach PDF, site and release.json to the GitHub release
+      - name: Create the GitHub release with PDF and site attached
         run: |
+          tag=$(jq -r .tag build/release.json)
+          jq -r .notes build/release.json > build/notes.md
+          if [ "$PRERELEASE" = true ]; then
+            printf '\n\nPre-release for review. No DOI; not for citation.\n' >> build/notes.md
+            flag=--prerelease
+          else
+            printf '\n\nDOI reserved: %s (active after "Publish release" is run)\n' "$(jq -r .doi build/release.json)" >> build/notes.md
+            flag=
+          fi
           tar -czf build/site.tar.gz -C _site .
-          gh release upload "$TAG" build/*.pdf build/site.tar.gz build/release.json --clobber
+          gh release create "$tag" build/*.pdf build/site.tar.gz build/release.json \
+            --target "$GITHUB_SHA" --title "Version ${tag#v}" --notes-file build/notes.md $flag
+          echo "TAG=$tag" >> "$GITHUB_ENV"
 
       - name: Deploy pre-release to /preview/
-        if: github.event.release.prerelease
+        if: env.PRERELEASE == 'true'
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ github.token }}
           publish_dir: _site
           destination_dir: preview
+
+      - name: Say what happens next
+        run: |
+          url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/releases/tag/$TAG"
+          if [ "$PRERELEASE" = true ]; then
+            echo "### Pre-release $TAG is ready" >> "$GITHUB_STEP_SUMMARY"
+            echo "- Preview: https://ipbes-data.github.io/IPBES_Data_Vision/preview/" >> "$GITHUB_STEP_SUMMARY"
+            echo "- PDF and notes: $url" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "### Release $TAG is prepared, but not public yet" >> "$GITHUB_STEP_SUMMARY"
+            echo "1. Check the Zenodo draft: $(jq -r .draft_url build/release.json)" >> "$GITHUB_STEP_SUMMARY"
+            echo "2. Check the PDF: $url" >> "$GITHUB_STEP_SUMMARY"
+            echo "3. If both are right, run **Publish release** from the admin panel." >> "$GITHUB_STEP_SUMMARY"
+          fi

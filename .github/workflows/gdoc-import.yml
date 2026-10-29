@@ -1,0 +1,56 @@
+name: "Import text from Google Doc"
+
+# Started from the admin panel. Copies text, title, editors and contact from the Google Doc
+# into the repository and opens a pull request; merging it accepts the new text.
+on:
+  workflow_dispatch:
+    inputs:
+      doc:
+        description: "Google Doc link (leave empty for the usual editing Doc)"
+        required: false
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: write
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GOOGLE_SERVICE_ACCOUNT_KEY: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_KEY }}
+      DOC: ${{ inputs.doc || vars.GDOC_ID }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: quarto-dev/quarto-actions/setup@v2
+
+      - name: Import from Google Doc
+        run: python3 scripts/gdoc.py import "$DOC" | tee import.log
+
+      - name: Open a pull request with the changes
+        run: |
+          git add -A _content.md media IPBES_Data_Vision.qmd
+          if git diff --cached --quiet; then
+            echo "### No changes: the Google Doc matches the current text." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          branch="google-doc-import-$(date -u +%Y%m%d-%H%M%S)"
+          git switch -c "$branch"
+          git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+            commit -q -m "Import text from Google Doc"
+          git push -q origin "$branch"
+          {
+            echo "Text imported from the Google Doc."
+            echo
+            cat import.log
+            echo
+            echo "- **Files changed** shows every change (\`_content.md\` is the text)."
+            echo "- The check below renders the website and PDF; open it and download **site** to read them."
+            echo "- **Merge** to accept the text, or close this pull request to discard it."
+          } > pr.md
+          url=$(gh pr create --base main --head "$branch" --title "Text from Google Doc ($(date -u +%F))" --body-file pr.md)
+          # Pull requests opened by Actions do not start other workflows on their own.
+          gh workflow run pr-check.yml --ref "$branch"
+          echo "### Review the imported text: $url" >> "$GITHUB_STEP_SUMMARY"

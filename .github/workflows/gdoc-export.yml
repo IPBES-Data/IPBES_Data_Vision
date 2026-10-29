@@ -1,0 +1,28 @@
+name: "Export text to Google Doc"
+
+# Started from the admin panel. Replaces the content of the export Google Doc with the current
+# text, title and editors. The editing Doc (GDOC_ID) is never overwritten.
+on:
+  workflow_dispatch:
+    inputs:
+      doc:
+        description: "Google Doc link to fill (leave empty for the usual export Doc)"
+        required: false
+
+permissions:
+  contents: read
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    env:
+      GOOGLE_SERVICE_ACCOUNT_KEY: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_KEY }}
+      GDOC_ID: ${{ vars.GDOC_ID }}
+      DOC: ${{ inputs.doc || vars.GDOC_EXPORT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: quarto-dev/quarto-actions/setup@v2
+
+      - name: Export to Google Doc
+        run: python3 scripts/gdoc.py export "$DOC" | tee -a "$GITHUB_STEP_SUMMARY"
