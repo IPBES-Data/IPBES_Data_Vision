@@ -10,6 +10,7 @@ project:
 website:
   title: "IPBES Data Management Vision"
   navbar:
+    pinned: true   # stays at the top while scrolling
     background: light
     logo: logos/ipbes-data.jpg
     logo-alt: "IPBES-Data"
