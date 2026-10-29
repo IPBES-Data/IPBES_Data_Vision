@@ -1,0 +1,32 @@
+name: "Update admin panel"
+
+# Keeps the admin panel at <site>/admin/ in step with main.
+on:
+  push:
+    branches: [main]
+    paths: [admin.qmd, .github/workflows/admin-panel.yml]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release   # same group as the release workflows: all of them push to gh-pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: quarto-dev/quarto-actions/setup@v2
+
+      - run: make admin
+
+      - name: Deploy to /admin/
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ github.token }}
+          publish_dir: _site/admin
+          destination_dir: admin

@@ -2,69 +2,59 @@
 title: "Admin panel"
 format:
   html:
-    output-file: admin.html
     toc: false
+    embed-resources: true
 execute:
   echo: false
 ---
 
-This page is for the people who manage the Vision. It is published with the website but not linked from it. The buttons open GitHub, where you need to be signed in with an account that may edit this repository; there, click **Run workflow**, fill in the form and click the green **Run workflow** button. Each task takes a few minutes; its status appears here (reload the page).
-
 ```{=html}
 <div id="panel" data-repo="IPBES-Data/IPBES_Data_Vision">
 
-<div class="card">
-  <h3>1. Bring in the edits from Google Docs</h3>
-  <p>Copies the text, title and editors from the Google Doc. Nothing changes on the website yet: you get a page showing every change, where you accept (<b>Merge</b>) or discard (<b>Close</b>) it.</p>
-  <a class="btn" data-workflow="gdoc-import.yml">Import from Google Doc</a>
-  <p class="status" data-status="gdoc-import.yml"></p>
-  <div id="imports"></div>
+<div class="grid">
+  <div class="card">
+    <h3>1. Import</h3>
+    <p>Bring in the edits from the Google Doc.</p>
+    <a class="btn" data-workflow="gdoc-import.yml">Import from Google Doc</a>
+    <p class="status" data-status="gdoc-import.yml"></p>
+  </div>
+  <div class="card">
+    <h3>2. Export</h3>
+    <p>New Google Doc with the current text.</p>
+    <a class="btn" data-workflow="gdoc-export.yml">Export to Google Doc</a>
+    <p class="status" data-status="gdoc-export.yml"></p>
+  </div>
+  <div class="card">
+    <h3>3. Release</h3>
+    <p>Pre-release (review) or release (DOI).</p>
+    <a class="btn" data-workflow="release.yml">Make a release or pre-release</a>
+    <p class="status" data-status="release.yml"></p>
+  </div>
+  <div class="card">
+    <h3>4. Publish</h3>
+    <p>Make a prepared release public.</p>
+    <a class="btn" data-workflow="publish.yml">Publish release</a>
+    <p class="status" data-status="publish.yml"></p>
+  </div>
 </div>
 
-<div class="card">
-  <h3>2. Start a new round of editing</h3>
-  <p>Creates a <b>new</b> Google Doc in your Drive with the current text and the bibliographic tables; the link is shown under the run's <i>details</i>. Share it with the editors. Existing Docs are never changed. To import from the new Doc later, paste its link into the import form (or ask the technical admin to make it the usual Doc).</p>
-  <a class="btn" data-workflow="gdoc-export.yml">Export to Google Doc</a>
-  <p class="status" data-status="gdoc-export.yml"></p>
-</div>
+<div id="waiting"></div>
 
-<div class="card">
-  <h3>3. Make a pre-release or a release</h3>
-  <p>Choose <b>Pre-release</b> to share a draft for review: no DOI, archived on GitHub, shown at <a href="preview/">/preview/</a>.<br>
-     Choose <b>Release</b> for a citable version: a DOI is reserved and a Zenodo draft prepared, but nothing is public until step 4.<br>
-     The form asks for the version number (e.g. <code>1.2</code>) and what changed (separate items with <code>;</code>).</p>
-  <a class="btn" data-workflow="release.yml">Make a release or pre-release</a>
-  <p class="status" data-status="release.yml"></p>
-</div>
-
-<div class="card">
-  <h3>4. Publish a release</h3>
-  <p>After step 3 (Release): check the Zenodo draft and the PDF, then publish. This makes the DOI permanent and updates the website.</p>
-  <div id="pending"></div>
-  <a class="btn" data-workflow="publish.yml">Publish release</a>
-  <p class="status" data-status="publish.yml"></p>
-</div>
-
-<div class="card links">
-  <h3>Useful links</h3>
-  <ul>
-    <li><a href="index.html">Website</a> · <a href="preview/">Latest pre-release preview</a> · <a href="older-releases.html">All releases</a></li>
-    <li><a data-href="/releases">Releases and pre-releases on GitHub</a> (PDFs and release notes)</li>
-    <li><a data-href="/pulls">Open changes waiting for review</a></li>
-    <li><a href="https://zenodo.org/me/uploads">Zenodo uploads</a> · <a href="https://sandbox.zenodo.org/me/uploads">Zenodo sandbox (tests)</a></li>
-  </ul>
-</div>
+<p class="links"><a href="../">Website</a> · <a href="../preview/">Pre-release preview</a> · <a href="../older-releases.html">All releases</a> · <a data-href="/releases">GitHub releases</a> · <a data-href="/pulls">Changes waiting for review</a> · <a href="https://zenodo.org/me/uploads">Zenodo</a> · <a href="https://sandbox.zenodo.org/me/uploads">Zenodo sandbox</a></p>
 
 </div>
 
 <style>
-#panel .card { border: 1px solid #d7dee6; border-radius: 8px; padding: 1rem 1.25rem; margin: 1rem 0; }
-#panel .card h3 { margin-top: 0; }
-#panel .btn { display: inline-block; background: #1f6f43; color: #fff; padding: 0.5rem 1rem;
+#panel .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0.75rem; margin: 0.5rem 0 1rem; }
+#panel .card { border: 1px solid #d7dee6; border-radius: 8px; padding: 0.75rem 1rem; display: flex; flex-direction: column; }
+#panel .card h3 { margin: 0 0 0.25rem; font-size: 1.1rem; }
+#panel .card p { margin: 0 0 0.6rem; flex-grow: 1; }
+#panel .btn { display: block; text-align: center; background: #1f6f43; color: #fff; padding: 0.5rem 0.75rem;
               border-radius: 6px; text-decoration: none; font-weight: 600; }
 #panel .btn:hover { background: #18583a; }
-#panel .status { color: #555; font-size: 0.9rem; margin: 0.5rem 0 0; }
-#panel .waiting { background: #fff6d6; border-radius: 6px; padding: 0.5rem 0.75rem; }
+#panel .card p.status { color: #555; font-size: 0.85rem; margin: 0.5rem 0 0; flex-grow: 0; }
+#panel .waiting { background: #fff6d6; border-radius: 6px; padding: 0.5rem 0.75rem; margin: 0 0 0.5rem; }
+#panel .links { font-size: 0.9rem; }
 </style>
 
 <script>
@@ -72,8 +62,9 @@ This page is for the people who manage the Vision. It is published with the webs
   const repo = document.getElementById("panel").dataset.repo;
   const gh = `https://github.com/${repo}`;
   const api = (path) => fetch(`https://api.github.com/repos/${repo}${path}`).then((r) => (r.ok ? r.json() : null));
-  const ago = (iso) => new Date(iso).toLocaleString();
   const link = (href, text) => `<a href="${href}" target="_blank" rel="noopener noreferrer">${text}</a>`;
+  const waiting = document.getElementById("waiting");
+  const notice = (html) => waiting.insertAdjacentHTML("beforeend", `<p class="waiting">${html}</p>`);
 
   document.querySelectorAll("[data-workflow]").forEach((a) => {
     a.href = `${gh}/actions/workflows/${a.dataset.workflow}`;
@@ -88,25 +79,34 @@ This page is for the people who manage the Vision. It is published with the webs
     if (!run) { p.textContent = runs ? "Not run yet." : ""; return; }
     const state = run.status !== "completed" ? "⏳ running" :
       run.conclusion === "success" ? "✅ succeeded" : `❌ ${run.conclusion}`;
-    p.innerHTML = `Last run: ${state}, started ${ago(run.created_at)} by ${run.actor.login} · ${link(run.html_url, "details")}`;
+    p.innerHTML = `${state}, ${new Date(run.created_at).toLocaleString()} · ${link(run.html_url, "details")}`;
   });
 
-  // Imports waiting for review.
+  // Imports waiting for review, and releases prepared but not yet published (notes still say "DOI reserved").
   api("/pulls?state=open&per_page=50").then((pulls) => {
     const imports = (pulls || []).filter((p) => p.head.ref.startsWith("google-doc-import-"));
-    document.getElementById("imports").innerHTML = imports.length
-      ? `<p class="waiting">Waiting for review: ${imports.map((p) => link(p.html_url, p.title)).join(", ")}</p>` : "";
+    if (imports.length) notice(`Import waiting for review (step 1): ${imports.map((p) => link(p.html_url, p.title)).join(", ")}`);
   });
-
-  // Releases prepared but not yet published (their notes still say "DOI reserved").
   api("/releases?per_page=20").then((releases) => {
     const pending = (releases || []).filter((r) => !r.prerelease && /^DOI reserved:/m.test(r.body || ""));
-    document.getElementById("pending").innerHTML = pending.length
-      ? `<p class="waiting">Ready to publish: ${pending.map((r) => link(r.html_url, r.tag_name)).join(", ")}</p>` : "";
+    if (pending.length) notice(`Release ready to publish (step 4): ${pending.map((r) => link(r.html_url, r.tag_name)).join(", ")}`);
   });
 })();
 </script>
 ```
+
+The buttons open the task on GitHub. You need to be signed in with an account that may edit this repository; there, click **Run workflow**, fill in the form and click the green **Run workflow** button. Each task takes a few minutes; its status appears above (reload the page).
+
+## What the buttons do
+
+1. **Import from Google Doc** copies the text and the bibliographic tables from the Google Doc. Nothing changes on the website yet: you get a page showing every change, where you accept (**Merge**) or discard (**Close**) it. The form takes a Doc link; leave it empty for the usual Doc.
+2. **Export to Google Doc** creates a **new** Google Doc in your Drive with the current text and the bibliographic tables; its link is shown under the run's *details*. Existing Docs are never changed. Paste the new Doc's link into the import form later (or ask the technical admin to make it the usual Doc).
+3. **Make a release or pre-release** asks for the type, the version number (e.g. `1.2`) and what changed (items separated by `;`).
+   - **Pre-release**: a draft for review. No DOI, archived on GitHub, shown at the *Pre-release preview* link.
+   - **Release**: a citable version. A DOI is reserved and a Zenodo draft prepared, but nothing is public until step 4.
+4. **Publish release**: after a release in step 3, check the Zenodo draft and the PDF, then publish. This makes the DOI permanent and updates the website. Leave the form empty to publish the newest release.
+
+This panel is always at <https://ipbes-data.github.io/IPBES_Data_Vision/admin/> and is updated whenever the repository changes.
 
 ## One-time setup (for the technical admin)
 

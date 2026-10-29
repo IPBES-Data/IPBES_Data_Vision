@@ -47,8 +47,13 @@ jobs:
           printf '\nVersion DOI: https://doi.org/%s (Zenodo %s)\n' "$DOI" "${{ steps.release.outputs.target }}" >> build/notes.md
           gh release edit "$TAG" --notes-file build/notes.md
 
-      - name: Unpack site
-        run: mkdir _site && tar -xzf build/site.tar.gz -C _site
+      - name: Unpack site, keeping the admin panel and the pre-release preview
+        run: |
+          mkdir _site && tar -xzf build/site.tar.gz -C _site
+          git fetch -q --depth=1 origin gh-pages
+          for dir in admin preview; do
+            git archive FETCH_HEAD "$dir" 2>/dev/null | tar -x -C _site || echo "No /$dir/ on the site yet"
+          done
 
       # Sandbox DOIs are test records, so only production releases replace the official site.
       - name: Deploy site

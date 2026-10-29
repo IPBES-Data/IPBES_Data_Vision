@@ -4,7 +4,7 @@ Living-document implementation of the **IPBES Data Management Vision**, built wi
 
 - Source repo: <https://github.com/IPBES-Data/IPBES_Data_Vision>
 - Website: <https://ipbes-data.github.io/IPBES_Data_Vision/>
-- **Admin panel** (import/export Google Doc, pre-releases, releases): <https://ipbes-data.github.io/IPBES_Data_Vision/admin.html>, source `admin.qmd`, which also documents the one-time setup.
+- **Admin panel** (import/export Google Doc, pre-releases, releases): <https://ipbes-data.github.io/IPBES_Data_Vision/admin/>, source `admin.qmd` (`make admin` renders it locally), which also documents the one-time setup.
 
 ## Where things are
 
