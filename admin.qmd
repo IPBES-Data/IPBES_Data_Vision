@@ -171,6 +171,80 @@ Released versions are `MAJOR.MINOR` (`1.0`, `1.1`, `2.0`); work in progress carr
 - While `ZENODO_TARGET` is `sandbox`, releases are test releases tagged `1.1-test.N`; they are not versions and do not end the cycle.
 - The numbers are git tags (`v1.1-beta.3`, …), handed out by `scripts/versions.py`.
 
+## Versions step by step: the example of 2.0
+
+This walks through one full cycle, using what has actually happened so far with version 2.0 and what comes next.
+
+```{mermaid}
+flowchart TD
+  R1["Released: 1.0<br/>(on Zenodo)"] --> E["1. Export to Google Doc<br/>choose target: 1.1 (minor) or 2.0 (major)"]
+  E --> D["Edit in the Google Doc"]
+  D --> I["2. Import from Google Doc<br/>review page: Merge"]
+  I --> B["beta: 2.0-beta.N<br/>(automatic, not published)"]
+  B -->|more edits| D
+  B --> P["3. Pre-release<br/>release candidate 2.0-rc.N<br/>PDF + /preview/, no DOI"]
+  P -->|changes needed| D
+  P --> RL["4. Release<br/>2.0-rc.N becomes 2.0<br/>DOI reserved, Zenodo draft"]
+  RL --> PB["5. Publish release<br/>DOI minted, website shows 2.0"]
+  PB --> E2["Next export: target 2.1 or 3.0<br/>next betas: 2.1-beta.1, ..."]
+```
+
+### Where 2.0 stands now
+
+| When | What happened | Version |
+|---|---|---|
+| 25 April 2022 | Published on Zenodo (DOI 10.5281/zenodo.5513474) | **1.0** (latest release) |
+| 29 October 2026 | Exported to Google Docs with *Target version* **2.0** (a major change: new aims, tracks and targets) | target 2.0 |
+| 29 October 2026 | Changes accepted into the repository (version rules, website layout, Google Docs sync) | 2.0-beta.1 to 2.0-beta.4 |
+| 29 October 2026 | 2.0-beta.1 published for review at the *Pre-release* button (a one-off; normally step 3 publishes a release candidate) | 2.0-beta.1 (published) |
+
+The line above the buttons always shows the current state, e.g. *Latest release: 1.0 · Working towards 2.0 · latest accepted change 2.0-beta.4*.
+
+### 1. Start a round of editing and decide minor or major
+
+Click **Export to Google Doc**. The form asks for the **Target version**: only `MAJOR.MINOR`, and only the next minor or the next major of the latest release. After 1.0 that is `1.1` or `2.0`; after 2.0 it will be `2.1` or `3.0`. Leave it empty to keep the current target.
+
+- **Minor** (`1.0 → 1.1`): the same content, better expressed or updated — wording, corrections, references, editors.
+- **Major** (`1.0 → 2.0`): what the Vision says or commits to changes — aims, tracks or targets added, removed or substantially changed, a new structure, a new Plenary decision.
+
+The new Google Doc shows *Current version* (e.g. `2.0-beta.4`, for information) and *Target version* (`2.0`) in its *Document information* table. The target can still be corrected there before importing. The previous export is marked "NEW VERSION AVAILABLE", locked and moved into the folder `archive`.
+
+### 2. Bring edits back: a beta
+
+When the editing round is done, click **Import from Google Doc** (form empty = the latest exported Doc). You get a review page listing every change; click **Merge** to accept, **Close** to discard. The Doc is marked "IMPORTED" and locked.
+
+Accepting gives the text the **next beta number automatically**: the next import after 2.0-beta.4 becomes **2.0-beta.5**. Betas are only recorded: no PDF, no website, no DOI. Changes to the page layout in the repository also count as betas (that is how 2.0-beta.2 to 2.0-beta.4 came about). Repeat export → edit → import as often as needed; the target stays 2.0.
+
+### 3. Publish for review: a release candidate
+
+When the text is ready for review, click **Make a release or pre-release**, choose **Pre-release (for review, no DOI)** and write what changed (items separated by `;`). The text becomes the next **release candidate**: the first one for 2.0 is **2.0-rc.1**.
+
+- The PDF and release notes appear as a GitHub pre-release, the website version at the **Pre-release** button (`/preview/`), with the amber banner "for review, not for citation".
+- If the review asks for changes: edit, export/import as in steps 1–2 (giving 2.0-beta.6, …), then make another pre-release: **2.0-rc.2**.
+- A pre-release is refused if nothing has changed since the last one.
+
+### 4. Release: the reviewed candidate gets the final number
+
+When the task force approves the latest release candidate, click **Make a release or pre-release** and choose **Release (citable, with DOI)**. There is no version to type: the latest candidate becomes the final version, **2.0-rc.2 → 2.0**, exactly as reviewed.
+
+- Refused if the text changed after that candidate ("make a new pre-release first"), so the DOI always belongs to a reviewed text.
+- A DOI is reserved on Zenodo and a Zenodo draft is filled (PDF, title, version, date, editors, release notes; access *closed* for now). The GitHub release shows "DOI reserved: …". **Nothing public changes yet.**
+- While `ZENODO_TARGET` is `sandbox`, this makes a test release `2.0-test.N` on the Zenodo sandbox instead; it is not a version.
+
+### 5. Publish: the DOI becomes permanent
+
+Check the Zenodo draft (link in the run's details) and the PDF on the GitHub release. If both are right, click **Publish release** (form empty = the release waiting to be published).
+
+- The DOI is minted on Zenodo and added to the release notes.
+- The website shows **2.0** with the green banner "Version 2.0 · released … · cite it with DOI …"; 1.0 stays available at *All versions*.
+- The preview is removed (its candidate is now the release); the *Pre-release* button disappears until the next pre-release.
+
+If the draft is wrong instead: delete the draft on Zenodo and the release and its tag on GitHub, fix the text, and continue from step 3.
+
+### 6. The next cycle
+
+After 2.0 is published, the next export offers **2.1** (minor) or **3.0** (major). Accepted edits then count as **2.1-beta.1**, **2.1-beta.2**, …, the first pre-release becomes **2.1-rc.1**, and its release **2.1**. Beta and release-candidate numbers always start again at 1 for each new version.
+
 ## One-time setup (for the technical admin)
 
 ### GitHub
