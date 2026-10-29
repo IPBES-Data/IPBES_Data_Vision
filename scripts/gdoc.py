@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
-"""Move the Vision text between Google Docs and this repository (Python stdlib + openssl + Pandoc).
+"""Move the Vision text between Google Docs and this repository (Python stdlib + Pandoc).
 
-  gdoc.py import <doc link or id>   Google Doc -> _content.md (+ media/) and the bibliographic fields in the .qmd
-  gdoc.py export <doc link or id>   bibliographic fields + _content.md -> replaces the content of that Google Doc
+  gdoc.py import <doc link or id>       Google Doc -> _content.md (+ media/) and the bibliographic fields in the .qmd
+  gdoc.py export [folder link or id]    bibliographic fields + _content.md -> a new Google Doc (default: My Drive)
+  gdoc.py login <client.json>           one-time sign-in; prints the GOOGLE_OAUTH secret on stdout
 
 Google Doc layout (export writes it, import reads it). Everything before the first heading is front matter:
   - a "Document information" table, one row per field (FIELDS below), value in the second column;
@@ -10,10 +11,10 @@ Google Doc layout (export writes it, import reads it). Everything before the fir
   - anything else there (notes, table of contents) is ignored.
 The text starts at the first Heading 1 that is not a table of contents.
 
-Auth: GOOGLE_SERVICE_ACCOUNT_KEY holds the service account's JSON key; the Doc must be shared with
-the service account's e-mail (Viewer for import, Editor for export).
+Auth: GOOGLE_OAUTH holds {"client_id", "client_secret", "refresh_token"} from `login`, so import and
+export act as the person who signed in: they can read that person's Docs and new Docs belong to them.
 """
-import base64
+import http.server
 import json
 import os
 import re
@@ -21,16 +22,20 @@ import shutil
 import subprocess
 import sys
 import tempfile
-import time
 import urllib.error
 import urllib.parse
 import urllib.request
+import webbrowser
+from datetime import datetime, timezone
 from pathlib import Path
 
 QMD = Path("IPBES_Data_Vision.qmd")
 CONTENT = Path("_content.md")
 MEDIA = Path("media")
 DOCX = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+GDOC = "application/vnd.google-apps.document"
+SCOPE = "https://www.googleapis.com/auth/drive"
+TOKEN_URL = "https://oauth2.googleapis.com/token"
 # Row label in the "Document information" table -> frontmatter key. All rows are required.
 FIELDS = {"Title": "title", "Produced by": "produced_by", "Publisher": "publisher", "Contact e-mail": "contact_email"}
 EDITOR_COLUMNS = ["Name", "Institution", "ORCID"]
@@ -47,33 +52,24 @@ def doc_id(link: str) -> str:
 
 
 def access_token() -> str:
-    """OAuth token for the service account (JWT signed with openssl, no Google libraries)."""
-    key = json.loads(os.environ["GOOGLE_SERVICE_ACCOUNT_KEY"])
-    b64 = lambda data: base64.urlsafe_b64encode(data).rstrip(b"=")
-    now = int(time.time())
-    claims = {"iss": key["client_email"], "scope": "https://www.googleapis.com/auth/drive",
-              "aud": "https://oauth2.googleapis.com/token", "iat": now, "exp": now + 3600}
-    unsigned = b64(b'{"alg":"RS256","typ":"JWT"}') + b"." + b64(json.dumps(claims).encode())
-    with tempfile.NamedTemporaryFile("w", suffix=".pem") as pem:
-        pem.write(key["private_key"])
-        pem.flush()
-        signature = subprocess.run(["openssl", "dgst", "-sha256", "-sign", pem.name], input=unsigned,
-                                   capture_output=True, check=True).stdout
-    body = urllib.parse.urlencode({"grant_type": "urn:ietf:params:oauth:grant-type:jwt-bearer",
-                                   "assertion": (unsigned + b"." + b64(signature)).decode()}).encode()
-    return json.loads(http("POST", "https://oauth2.googleapis.com/token", body,
+    """Short-lived access token from the stored refresh token."""
+    auth = json.loads(os.environ["GOOGLE_OAUTH"])
+    body = urllib.parse.urlencode(dict(grant_type="refresh_token", client_id=auth["client_id"],
+                                       client_secret=auth["client_secret"], refresh_token=auth["refresh_token"]))
+    return json.loads(call("POST", TOKEN_URL, body.encode(),
                            {"Content-Type": "application/x-www-form-urlencoded"}))["access_token"]
 
 
-def http(method: str, url: str, data: bytes = None, headers: dict = None) -> bytes:
+def call(method: str, url: str, data: bytes = None, headers: dict = None) -> bytes:
     try:
         with urllib.request.urlopen(urllib.request.Request(url, data=data, method=method, headers=headers or {})) as r:
             return r.read()
     except urllib.error.HTTPError as exc:
         detail = exc.read().decode(errors="replace")[:500]
-        if exc.code in (403, 404):
-            detail += ("\nIs the Google Doc shared with the service account "
-                       f"({json.loads(os.environ['GOOGLE_SERVICE_ACCOUNT_KEY'])['client_email']})?")
+        if "invalid_grant" in detail:
+            detail += "\nThe Google sign-in has expired or was revoked; run `scripts/gdoc.py login` again."
+        elif exc.code in (403, 404):
+            detail += "\nCan the account that signed in open this Google Doc or folder?"
         sys.exit(f"Google {method} {url.split('?')[0]} -> HTTP {exc.code}: {detail}")
 
 
@@ -206,21 +202,65 @@ def export_docx() -> bytes:
 
 def cmd_import(link: str) -> None:
     token = access_token()
-    import_docx(http("GET", f"https://www.googleapis.com/drive/v3/files/{doc_id(link)}/export?mimeType={DOCX}",
+    import_docx(call("GET", f"https://www.googleapis.com/drive/v3/files/{doc_id(link)}/export?mimeType={DOCX}",
                      headers={"Authorization": f"Bearer {token}"}))
 
 
-def cmd_export(link: str) -> None:
-    target = doc_id(link)
-    if target == doc_id(os.environ.get("GDOC_ID", "")):
-        sys.exit("Refusing to overwrite the editing Google Doc (GDOC_ID). Export goes to the separate export Doc.")
+def cmd_export(folder: str = "") -> None:
+    """Upload the export as a new Google Doc (Drive converts the .docx)."""
+    stamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+    metadata = {"name": f"IPBES Data Management Vision - export {stamp}", "mimeType": GDOC}
+    if folder:
+        metadata["parents"] = [doc_id(folder.replace("/folders/", "/d/"))]
+    boundary = "vision-export-boundary"
+    body = (f"--{boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n{json.dumps(metadata)}\r\n"
+            f"--{boundary}\r\nContent-Type: {DOCX}\r\n\r\n").encode() + export_docx() + f"\r\n--{boundary}--\r\n".encode()
     token = access_token()
-    http("PATCH", f"https://www.googleapis.com/upload/drive/v3/files/{target}?uploadType=media&supportsAllDrives=true",
-         export_docx(), {"Authorization": f"Bearer {token}", "Content-Type": DOCX})
-    print(f"Exported to https://docs.google.com/document/d/{target}/edit")
+    created = json.loads(call("POST", "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart"
+                                      "&supportsAllDrives=true", body,
+                              {"Authorization": f"Bearer {token}", "Content-Type": f"multipart/related; boundary={boundary}"}))
+    print(f"Created {metadata['name']!r}: https://docs.google.com/document/d/{created['id']}/edit")
+
+
+def cmd_login(client_file: str) -> None:
+    """One-time: sign in in the browser and print the GOOGLE_OAUTH secret (instructions go to stderr)."""
+    client = next(iter(json.loads(Path(client_file).read_text()).values()))  # {"installed": {...}}
+    received = {}
+
+    class Callback(http.server.BaseHTTPRequestHandler):
+        def do_GET(self):
+            received.update(urllib.parse.parse_qsl(urllib.parse.urlparse(self.path).query))
+            self.send_response(200)
+            self.send_header("Content-Type", "text/plain; charset=utf-8")
+            self.end_headers()
+            self.wfile.write("Signed in. You can close this tab and return to the terminal.".encode())
+
+        def log_message(self, *args):
+            pass
+
+    server = http.server.HTTPServer(("127.0.0.1", 0), Callback)
+    redirect = f"http://127.0.0.1:{server.server_port}"
+    url = "https://accounts.google.com/o/oauth2/v2/auth?" + urllib.parse.urlencode(dict(
+        client_id=client["client_id"], redirect_uri=redirect, response_type="code", scope=SCOPE,
+        access_type="offline", prompt="consent"))
+    print(f"Opening the Google sign-in page. If it does not open, visit:\n{url}\n", file=sys.stderr)
+    webbrowser.open(url)
+    while "code" not in received and "error" not in received:
+        server.handle_request()
+    if "error" in received:
+        sys.exit(f"Sign-in failed: {received['error']}")
+    tokens = json.loads(call("POST", TOKEN_URL, urllib.parse.urlencode(dict(
+        grant_type="authorization_code", code=received["code"], client_id=client["client_id"],
+        client_secret=client["client_secret"], redirect_uri=redirect)).encode(),
+        {"Content-Type": "application/x-www-form-urlencoded"}))
+    print(json.dumps({"client_id": client["client_id"], "client_secret": client["client_secret"],
+                      "refresh_token": tokens["refresh_token"]}))
+    print("\nDone. Store the line above as the GitHub secret GOOGLE_OAUTH, e.g.\n"
+          "  python3 scripts/gdoc.py login client.json | gh secret set GOOGLE_OAUTH", file=sys.stderr)
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 3 or sys.argv[1] not in ("import", "export"):
+    commands = {"import": cmd_import, "export": cmd_export, "login": cmd_login}
+    if len(sys.argv) < 2 or sys.argv[1] not in commands or (sys.argv[1] != "export" and len(sys.argv) != 3):
         sys.exit(__doc__)
-    {"import": cmd_import, "export": cmd_export}[sys.argv[1]](sys.argv[2])
+    commands[sys.argv[1]](*sys.argv[2:3])

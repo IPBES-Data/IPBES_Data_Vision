@@ -23,7 +23,7 @@ This page is for the people who manage the Vision. It is published with the webs
 
 <div class="card">
   <h3>2. Start a new round of editing</h3>
-  <p>Writes the current text into the export Google Doc. Make a copy of it in Google Drive (<i>File → Make a copy</i>) to edit; the editing Doc itself is never overwritten.</p>
+  <p>Creates a <b>new</b> Google Doc in your Drive with the current text and the bibliographic tables; the link is shown under the run's <i>details</i>. Share it with the editors. Existing Docs are never changed. To import from the new Doc later, paste its link into the import form (or ask the technical admin to make it the usual Doc).</p>
   <a class="btn" data-workflow="gdoc-export.yml">Export to Google Doc</a>
   <p class="status" data-status="gdoc-export.yml"></p>
 </div>
@@ -121,17 +121,28 @@ This page is for the people who manage the Vision. It is published with the webs
 | `ZENODO_TARGET` | variable | `sandbox` (tests) or `production` (real DOIs) |
 | `ZENODO_SANDBOX_TOKEN` | secret | sandbox.zenodo.org token with `deposit:write` and `deposit:actions` |
 | `ZENODO_TOKEN` | secret | zenodo.org token with `deposit:write` and `deposit:actions` |
-| `GOOGLE_SERVICE_ACCOUNT_KEY` | secret | JSON key of the Google service account (see below) |
-| `GDOC_ID` | variable | link or ID of the Google Doc where the text is edited |
-| `GDOC_EXPORT_ID` | variable | link or ID of the Google Doc that exports are written into |
+| `GOOGLE_OAUTH` | secret | Google sign-in, created by `scripts/gdoc.py login` (see below) |
+| `GDOC_ID` | variable | link or ID of the usual Google Doc to import from |
+| `GDRIVE_FOLDER_ID` | variable | optional: link or ID of the Drive folder for exports (default: My Drive) |
 
 People who use the panel need *Write* access to the repository.
 
 ### Google (works with a free Google account)
 
-1. In the [Google Cloud console](https://console.cloud.google.com/) create a project, enable the **Google Drive API**, create a **service account** and add a **JSON key**; store the key's content as `GOOGLE_SERVICE_ACCOUNT_KEY`. No billing is needed.
-2. Share the editing Doc with the service account's e-mail address as **Viewer**.
-3. Create an empty Google Doc for exports (e.g. "Vision – export") in your own Drive and share it with the service account as **Editor**. A service account has no Drive storage of its own, so it fills this Doc rather than creating new ones.
+Import and export act as **one Google account** (yours, or a dedicated one): they can read every Doc that account can open, and exports are new Docs owned by it, using its normal Drive storage. Set up once, on a computer with Python:
+
+1. In the [Google Cloud console](https://console.cloud.google.com/), signed in with that account, create a project and enable the **Google Drive API**. No billing is needed.
+2. *Google Auth Platform → Branding*: give the app a name (e.g. "IPBES Vision sync") and your e-mail. *Audience*: user type **External**, then **Publish app** (status "In production"). In "Testing" status Google ends the sign-in after 7 days.
+3. *Clients → Create client*, type **Desktop app**; download the JSON file (e.g. `client.json`).
+4. In this repository run, with the [GitHub CLI](https://cli.github.com/) signed in:
+
+   ```bash
+   python3 scripts/gdoc.py login client.json | gh secret set GOOGLE_OAUTH
+   ```
+
+   A browser opens; sign in with the Google account. Google warns that the app is not verified: choose *Advanced → Go to IPBES Vision sync* (it is your own app) and allow access to Google Drive. Then delete `client.json`.
+
+If an import or export later fails with "sign-in has expired or was revoked" (e.g. after removing the app's access in the Google account, or after 6 months without use), repeat step 4.
 
 ### How the Google Doc must be laid out
 
@@ -145,7 +156,7 @@ Everything before the first heading is the front matter; the text of the Vision 
 
 If a table is missing or a value is invalid, the import stops without changing anything and lists what to fix (shown under the failed run's *details*).
 
-An export writes exactly this layout, so the easiest start is to run **Export to Google Doc** once and edit a copy of the result.
+An export writes exactly this layout, so the easiest start is to run **Export to Google Doc** once and edit the new Doc.
 
 ### Zenodo
 
@@ -157,5 +168,6 @@ An export writes exactly this layout, so the easiest start is to run **Export to
 make preview                                                    # live preview while editing
 make build                                                      # website + PDF as unreleased draft
 python3 scripts/release.py prepare --version 1.2 --prerelease   # pre-release build, no Zenodo
-GOOGLE_SERVICE_ACCOUNT_KEY="$(cat key.json)" python3 scripts/gdoc.py import <doc link>
+export GOOGLE_OAUTH="$(python3 scripts/gdoc.py login client.json)"   # sign in once per shell
+python3 scripts/gdoc.py import <doc link>
 ```

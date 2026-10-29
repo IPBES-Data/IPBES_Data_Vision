@@ -19,7 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       GH_TOKEN: ${{ github.token }}
-      GOOGLE_SERVICE_ACCOUNT_KEY: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_KEY }}
+      GOOGLE_OAUTH: ${{ secrets.GOOGLE_OAUTH }}
       DOC: ${{ inputs.doc || vars.GDOC_ID }}
     steps:
       - uses: actions/checkout@v4
