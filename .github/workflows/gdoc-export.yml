@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: "Version this round of editing prepares, e.g. 1.1 (next minor) or 2.0 (next major); empty = keep the current one"
+        description: "Version this round of editing prepares (empty = keep the current one). Minor, e.g. 1.1: wording, corrections, references, editors. Major, e.g. 2.0: aims, tracks, targets or structure change."
         required: false
       folder:
         description: "Google Drive folder link (leave empty for the usual folder)"

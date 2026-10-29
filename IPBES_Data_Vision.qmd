@@ -19,8 +19,8 @@ editors:
 zenodo:
   concept_doi: "10.5281/zenodo.5513473"          # production "all versions" DOI
   sandbox_concept_doi: "10.5072/zenodo.472195"   # used when ZENODO_TARGET=sandbox
-  access_right: "open"
-  license: "cc-by-4.0"
+  access_right: "closed"     # open | closed | restricted; closed for now (decision 2026-10-29)
+  license: "cc-by-4.0"       # applied by Zenodo when access_right is open
 format:
   html:
     output-file: index.html

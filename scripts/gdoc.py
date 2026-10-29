@@ -47,7 +47,8 @@ ORCID = re.compile(r"\d{4}-\d{4}-\d{4}-\d{3}[\dX]")
 EMAIL = re.compile(r"[^@\s]+@[^@\s]+\.[^@\s]+")
 NOTE = ("Edit the two tables below to change the bibliographic information; add or delete rows in the Editors "
         "table as needed. Do not rename the tables' first column. Version is the version this text is being "
-        "prepared as (e.g. 1.1, the next minor, or 2.0, the next major); beta and release-candidate numbers are "
+        "prepared as: the next minor (e.g. 1.1) for wording, corrections, references or editors, or the next major "
+        "(e.g. 2.0) when aims, tracks, targets or the structure change; beta and release-candidate numbers are "
         "added automatically. The text of the Vision starts at the first heading; this part is not copied into it.")
 
 

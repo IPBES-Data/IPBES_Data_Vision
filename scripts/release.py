@@ -115,10 +115,13 @@ class Zenodo:
             publication_date=date,
             description=metadata.get("description", "").split(NOTES_HEADING)[0] + NOTES_HEADING + f"<ul>{notes}</ul>",
             access_right=settings["access_right"],
-            license=settings["license"],
             contributors=[{"name": e["name"], "type": "Editor", "affiliation": e.get("institution", ""),
                            "orcid": e.get("orcid", "")} for e in fm.get("editors", [])],
         )
+        if settings["access_right"] in ("open", "embargoed"):  # Zenodo only takes a licence for these
+            metadata["license"] = settings["license"]
+        else:
+            metadata.pop("license", None)
         self.api("PUT", f"/api/deposit/depositions/{draft['id']}", {"metadata": metadata})
         for old in draft.get("files", []):  # a reused draft may still hold an earlier upload
             self.api("DELETE", f"/api/deposit/depositions/{draft['id']}/files/{old['id']}")

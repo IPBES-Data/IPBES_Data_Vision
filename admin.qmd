@@ -23,7 +23,7 @@ execute:
   <div class="card">
     <h3>2. Export</h3>
     <p>New Google Doc with the current text.</p>
-    <a class="btn" data-workflow="gdoc-export.yml" title="Creates a new Google Doc in your Drive with the current text and the bibliographic tables. Existing Docs are not changed. The new Doc's link is shown under the run's details. Form: the version this round of editing prepares (e.g. 1.1 = next minor, 2.0 = next major; empty = keep the current one) and the Drive folder (empty = usual folder).">Export to Google Doc</a>
+    <a class="btn" data-workflow="gdoc-export.yml" title="Creates a new Google Doc in your Drive with the current text and the bibliographic tables. Existing Docs are not changed. The new Doc's link is shown under the run's details. Form: the version this round of editing prepares (empty = keep the current one): minor, e.g. 1.1, for wording, corrections, references or editors; major, e.g. 2.0, when aims, tracks, targets or the structure change. And the Drive folder (empty = usual folder).">Export to Google Doc</a>
     <p class="status" data-status="gdoc-export.yml"></p>
   </div>
   <div class="card">
@@ -149,6 +149,9 @@ Released versions are `MAJOR.MINOR` (`1.0`, `1.1`, `2.0`); work in progress carr
 | Release + Publish | the latest release candidate **unchanged** becomes `1.1`, with a DOI |
 
 - **Minor or major is decided at export**: you type only the `MAJOR.MINOR` part, and it must be the next minor (`1.0 → 1.1`) or the next major (`1.0 → 2.0`) version. It is written into the Google Doc's *Version* row, can be corrected there, and takes effect when the import is accepted. The `-beta.N` / `-rc.N` part is always added automatically. Until a version is chosen, the next minor is assumed.
+- **Which one?**
+  - **Minor** (`1.0 → 1.1`): the same content, better expressed or updated — wording, clarifications, corrections, updated references or names, changes to editors, contact or publisher.
+  - **Major** (`1.0 → 2.0`): what the Vision says or commits to changes — aims, tracks or targets (including their dates) added, removed or substantially changed, the document restructured, or changes following a new Plenary decision. Rule of thumb: would someone citing the previous version need to know that the substance changed?
 - Beta and release-candidate numbers start at 1 for each new version; betas keep counting after a release candidate.
 - A release always publishes a release candidate exactly as it was reviewed; if the text changed since, make a new pre-release first. Released numbers only go up.
 - While `ZENODO_TARGET` is `sandbox`, releases are test releases tagged `1.1-test.N`; they are not versions and do not end the cycle.
