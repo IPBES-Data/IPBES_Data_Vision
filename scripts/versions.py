@@ -4,8 +4,9 @@
   vX.Y          release (citable, DOI)        vX.Y-rc.N     pre-release (release candidate)
   vX.Y-beta.N   accepted change to the text   vX.Y-test.N   Zenodo sandbox test release (not a version)
 
-A cycle runs from one release to the next; its target X.Y is the next minor version until the first
-pre-release of the cycle chooses minor or major.
+A cycle runs from one release to the next. Its target X.Y is chosen when exporting to Google Docs, travels
+in the Doc's "Version" row and comes back with the import as `next_version` in the frontmatter; it must be
+the next minor or next major version. Until one is chosen, the target is the next minor version.
 
   versions.py beta      print the tag for the change just merged (used by .github/workflows/beta.yml)
   versions.py status    print the current state
@@ -13,12 +14,14 @@ pre-release of the cycle chooses minor or major.
 import re
 import subprocess
 import sys
+from pathlib import Path
 
 TAG = re.compile(r"v(\d+)\.(\d+)(?:-(beta|rc|test)\.(\d+))?")
 FIRST_RELEASE = (1, 0)  # 1.0 was published on Zenodo before this repository existed
 # "The text": what a beta numbers and what must be unchanged between a release candidate and its release.
 # Keep in sync with the paths in .github/workflows/beta.yml.
 TEXT_PATHS = ["_content.md", "IPBES_Data_Vision.qmd", "media"]
+QMD = Path("IPBES_Data_Vision.qmd")
 
 
 def git(*args: str) -> str:
@@ -45,11 +48,37 @@ def latest_release(ts: list) -> tuple:
     return max([t[:2] for t in ts if t[2] is None], default=FIRST_RELEASE)
 
 
+def allowed(ts: list) -> list:
+    """Versions the next release may have: next minor, next major."""
+    major, minor = latest_release(ts)
+    return [(major, minor + 1), (major + 1, 0)]
+
+
+def parse(text: str):
+    m = re.fullmatch(r"\s*v?(\d+)\.(\d+)\s*", text or "")
+    return (int(m[1]), int(m[2])) if m else None
+
+
+def check(text: str, ts: list) -> tuple:
+    """The version a user typed (e.g. "1.1"), or exit with the allowed choices."""
+    version = parse(text)
+    if version not in allowed(ts):
+        minor, major = (fmt(v) for v in allowed(ts))
+        sys.exit(f"The version must be {minor} (minor change) or {major} (major change), not {text!r}: "
+                 f"the latest release is {fmt(latest_release(ts))}.")
+    return version
+
+
+def declared():
+    """next_version from the frontmatter, if set."""
+    m = re.search(r'^next_version:\s*"?([^"\n]*)"?\s*$', QMD.read_text(), re.M) if QMD.exists() else None
+    return parse(m[1]) if m else None
+
+
 def target(ts: list) -> tuple:
-    """Version the current cycle works towards."""
-    released = latest_release(ts)
-    working = [t[:2] for t in ts if t[2] in ("beta", "rc") and t[:2] > released]
-    return max(working, default=(released[0], released[1] + 1))
+    """Version the current cycle works towards: next_version if still ahead, else the next minor."""
+    version = declared()
+    return version if version in allowed(ts) else allowed(ts)[0]
 
 
 def latest(ts: list, version: tuple, kind: str):
@@ -75,17 +104,11 @@ def beta_tag(ts: list) -> str:
     return next_tag(ts, target(ts), "beta")
 
 
-def rc_tag(ts: list, major: bool) -> str:
-    """Next release candidate; `major` only counts for the first one of a cycle."""
+def rc_tag(ts: list) -> str:
+    """Next release candidate."""
     released, version = latest_release(ts), target(ts)
-    first = latest(ts, version, "rc") is None
-    if first and major:
-        version = (released[0] + 1, 0)
-    elif major:
-        print(f"Note: this cycle already works towards {fmt(version)}; the major/minor choice is ignored.",
-              file=sys.stderr)
     release_name = f"v{fmt(released)}"
-    previous = latest(ts, target(ts), "rc") or (release_name if release_name in [t[4] for t in ts] else None)
+    previous = latest(ts, version, "rc") or (release_name if release_name in [t[4] for t in ts] else None)
     if previous and commit(previous) == commit("HEAD"):
         sys.exit(f"Nothing has changed since {previous[1:]}; there is nothing new to pre-release.")
     return next_tag(ts, version, "rc")

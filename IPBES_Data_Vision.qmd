@@ -2,8 +2,10 @@
 title: "The IPBES long-term vision of data and knowledge management"
 subtitle: "Version {{< meta version >}} · {{< meta release_date >}}"
 # Version, release date, release notes and DOI are not stored here: scripts/release.py
-# adds them from the release form. title, produced_by, publisher, contact_email and
-# editors are updated by the Google Doc import; the text itself is in _content.md.
+# adds them from the release form. title, produced_by, publisher, contact_email, editors
+# and next_version (the version this text is prepared as, chosen at export) are updated
+# by the Google Doc import; the text itself is in _content.md.
+next_version: ""
 produced_by: "IPBES task force on knowledge and data"
 publisher: "IPBES secretariat, Bonn, Germany"
 contact_email: "tsu.data@ipbes.net"

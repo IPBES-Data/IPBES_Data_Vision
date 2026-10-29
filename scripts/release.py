@@ -2,7 +2,7 @@
 """Build and release the IPBES Data Management Vision (Python stdlib only).
 
   release.py build                                    render site + PDF as an unreleased draft
-  release.py prepare --prerelease [--major] --notes   next release candidate, e.g. v1.1-rc.2: no DOI, no Zenodo
+  release.py prepare --prerelease --notes           next release candidate, e.g. v1.1-rc.2: no DOI, no Zenodo
   release.py prepare --notes "a; b"                   release the latest candidate, e.g. v1.1-rc.2 -> v1.1:
                                                       reserve DOI, render, fill Zenodo draft (v1.1-test.<n> on sandbox)
   release.py publish build/release.json               publish (mint) the Zenodo draft from prepare
@@ -136,7 +136,7 @@ def cmd_prepare(args) -> None:
     if zenodo:
         tag, candidate = versions.release_tag(ts, test=zenodo.target == "sandbox")
     else:
-        tag, candidate = versions.rc_tag(ts, args.major), None
+        tag, candidate = versions.rc_tag(ts), None
     version, notes, today = tag[1:], notes_markdown(args.notes), datetime.date.today()
     meta = {"version": version, "release_date": today.isoformat(), "release_year": str(today.year),
             "release_notes": notes}
@@ -175,7 +175,6 @@ def main() -> None:
     prepare = sub.add_parser("prepare")
     prepare.add_argument("--notes", default="", help="release notes, items separated by ';'")
     prepare.add_argument("--prerelease", action="store_true")
-    prepare.add_argument("--major", action="store_true", help="first pre-release of a cycle: next major version")
     prepare.set_defaults(func=cmd_prepare)
     publish = sub.add_parser("publish")
     publish.add_argument("release_json")

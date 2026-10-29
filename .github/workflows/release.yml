@@ -16,12 +16,6 @@ on:
         options:
           - "Pre-release (for review, no DOI)"
           - "Release (citable, with DOI)"
-      bump:
-        description: "First pre-release after a release only: is this a minor or a major new version?"
-        type: choice
-        options:
-          - "Minor (e.g. 1.0 → 1.1)"
-          - "Major (e.g. 1.0 → 2.0)"
       notes:
         description: "What changed? Separate items with ;"
         required: true
@@ -38,7 +32,6 @@ jobs:
     runs-on: ubuntu-latest
     env:
       GH_TOKEN: ${{ github.token }}
-      MAJOR: ${{ startsWith(inputs.bump, 'Major') }}
       NOTES: ${{ inputs.notes }}
       PRERELEASE: ${{ startsWith(inputs.kind, 'Pre-release') }}
     steps:
@@ -63,7 +56,7 @@ jobs:
 
       - name: Build pre-release (no DOI, no Zenodo)
         if: env.PRERELEASE == 'true'
-        run: python3 scripts/release.py prepare --prerelease --notes "$NOTES" $([ "$MAJOR" = true ] && echo --major)
+        run: python3 scripts/release.py prepare --prerelease --notes "$NOTES"
 
       - name: Reserve DOI, build, and fill the Zenodo draft
         if: env.PRERELEASE != 'true'
