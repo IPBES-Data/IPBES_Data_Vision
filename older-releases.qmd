@@ -8,301 +8,51 @@ execute:
 ---
 
 ```{r}
-`%||%` <- function(x, y) {
-  if (is.null(x) || length(x) == 0 || identical(x, "")) y else x
-}
-
-meta <- tryCatch(
-  rmarkdown::yaml_front_matter("IPBES_Data_Vision.qmd"),
-  error = function(e) list()
-)
-
-concept_doi <- as.character(meta$concept_doi %||% "")
-concept_doi_url <- if (!identical(concept_doi, "")) {
-  paste0("https://doi.org/", concept_doi)
-} else {
-  ""
-}
+concept_doi <- rmarkdown::yaml_front_matter("IPBES_Data_Vision.qmd")$zenodo$concept_doi
 ```
 
-```{r, results='asis'}
-if (knitr::is_html_output()) {
-  cat(
-    "<p>",
-    "<a href=\"index.html\">Vision</a>",
-    " | ",
-    "<a href=\"older-releases.html\">All Releases</a>",
-    " | ",
-    "<a href=\"assets/IPBES-Data-Management-Vision-latest.pdf\" target=\"_blank\" rel=\"noopener noreferrer\">Latest PDF</a>",
-    "</p>",
-    sep = ""
-  )
-}
-```
+<p><a href="index.html">Vision</a> | <a href="older-releases.html">All Releases</a> | <a href="assets/IPBES-Data-Management-Vision-latest.pdf" target="_blank" rel="noopener noreferrer">Latest PDF</a></p>
 
 ## All Releases
 
-This page lists published versions directly from Zenodo using the concept DOI.
+All published versions, read live from Zenodo. Concept DOI (always the latest version): [`r concept_doi`](https://doi.org/`r concept_doi`)
 
-`r if (!identical(concept_doi_url, "")) sprintf("Concept DOI: [%s](%s)", concept_doi, concept_doi_url) else "**Concept DOI missing in frontmatter**"`
+```{r, results='asis'}
+cat(sprintf('<div id="all-releases" data-concept-doi="%s"><p>Loading releases from Zenodo&hellip;</p></div>', concept_doi))
+```
 
 ```{=html}
 <style>
-#all-releases table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 0.75rem;
-}
-
-#all-releases thead th {
-  text-align: left;
-  font-weight: 700;
-  padding: 0.55rem 1rem 0.55rem 0;
-  border-bottom: 2px solid #d7dee6;
-  white-space: nowrap;
-}
-
-#all-releases tbody td {
-  padding: 0.6rem 1rem 0.6rem 0;
-  border-bottom: 1px solid #e7ebef;
-  vertical-align: top;
-}
-
-#all-releases tbody tr:last-child td {
-  border-bottom: 0;
-}
-
-#all-releases tbody td:nth-child(1),
-#all-releases tbody td:nth-child(2),
-#all-releases tbody td:nth-child(4),
-#all-releases tbody td:nth-child(5) {
-  white-space: nowrap;
-}
+#all-releases table { width: 100%; border-collapse: collapse; margin-top: 0.75rem; }
+#all-releases th { text-align: left; padding: 0.55rem 1rem 0.55rem 0; border-bottom: 2px solid #d7dee6; }
+#all-releases td { padding: 0.6rem 1rem 0.6rem 0; border-bottom: 1px solid #e7ebef; white-space: nowrap; }
 </style>
-```
-
-```{r}
-release_rows <- NULL
-release_error <- NULL
-page_size <- 5L
-
-extract_pdf_url <- function(file_entry) {
-  if (!is.list(file_entry)) {
-    return("")
+<script>
+(async () => {
+  const box = document.getElementById("all-releases");
+  const conceptDoi = box.dataset.conceptDoi;
+  const conceptId = conceptDoi.match(/(\d+)$/)[1];
+  const link = (href, text) => `<a href="${href}" target="_blank" rel="noopener noreferrer">${text}</a>`;
+  try {
+    // ponytail: one page of 25 (Zenodo's anonymous maximum); add paging past 25 versions.
+    const response = await fetch(
+      `https://zenodo.org/api/records?q=conceptrecid:${conceptId}&all_versions=true&sort=mostrecent&size=25`
+    );
+    if (!response.ok) throw new Error(`Zenodo returned HTTP ${response.status}`);
+    const records = (await response.json()).hits.hits;
+    if (!records.length) throw new Error("no published versions yet");
+    const rows = records.map((r) => {
+      const pdf = (r.files || []).find((f) => /\.pdf$/i.test(f.key));
+      return `<tr><td>${r.metadata.version || "-"}</td><td>${r.metadata.publication_date}</td>` +
+        `<td>${link(`https://doi.org/${r.doi}`, r.doi)}</td>` +
+        `<td>${pdf ? link(pdf.links.self, "PDF") : "-"}</td><td>${link(r.links.self_html, "Record")}</td></tr>`;
+    });
+    box.innerHTML = "<table><thead><tr><th>Version</th><th>Release date</th><th>DOI</th>" +
+      `<th>Download</th><th>Zenodo</th></tr></thead><tbody>${rows.join("")}</tbody></table>`;
+  } catch (error) {
+    box.innerHTML = `<p>Could not load the release list (${error.message}). ` +
+      `See all versions on Zenodo: ${link(`https://doi.org/${conceptDoi}`, conceptDoi)}</p>`;
   }
-  links <- file_entry$links
-  if (is.list(links)) {
-    if (!is.null(links$self) && nzchar(as.character(links$self))) {
-      return(as.character(links$self))
-    }
-    if (!is.null(links$download) && nzchar(as.character(links$download))) {
-      return(as.character(links$download))
-    }
-  }
-  ""
-}
-
-if (!identical(concept_doi, "")) {
-  if (!requireNamespace("httr2", quietly = TRUE)) {
-    release_error <- "Package `httr2` is required to query Zenodo at render time."
-  } else {
-    zenodo_records <- function(query_value) {
-      all_hits <- list()
-      page <- 1L
-
-      repeat {
-        req <- httr2::request("https://zenodo.org/api/records") |>
-          httr2::req_url_query(
-            q = query_value,
-            sort = "mostrecent",
-            page = as.character(page),
-            size = as.character(page_size),
-            all_versions = "true"
-          ) |>
-          httr2::req_headers(Accept = "application/json")
-
-        resp <- tryCatch(
-          httr2::req_perform(req),
-          error = function(e) {
-            release_error <<- conditionMessage(e)
-            NULL
-          }
-        )
-        if (is.null(resp)) {
-          return(NULL)
-        }
-
-        status <- httr2::resp_status(resp)
-        if (status < 200 || status >= 300) {
-          body <- tryCatch(
-            httr2::resp_body_string(resp),
-            error = function(e) ""
-          )
-          body <- gsub("\\s+", " ", body)
-          body <- trimws(body)
-          if (nchar(body) > 280) {
-            body <- paste0(substr(body, 1, 280), "...")
-          }
-          release_error <<- sprintf(
-            "Zenodo API returned HTTP %s%s",
-            status,
-            if (nzchar(body)) sprintf(": %s", body) else ""
-          )
-          return(NULL)
-        }
-
-        payload <- tryCatch(
-          httr2::resp_body_json(resp, simplifyVector = FALSE),
-          error = function(e) {
-            release_error <<- conditionMessage(e)
-            NULL
-          }
-        )
-        if (is.null(payload)) {
-          return(NULL)
-        }
-
-        hits <- payload$hits$hits
-        if (is.null(hits) || length(hits) == 0) {
-          if (page == 1L) {
-            return(list())
-          }
-          break
-        }
-
-        all_hits <- c(all_hits, hits)
-        if (length(hits) < page_size) {
-          break
-        }
-
-        page <- page + 1L
-      }
-
-      all_hits
-    }
-
-    dedupe_records <- function(record_list) {
-      if (is.null(record_list) || length(record_list) == 0) {
-        return(list())
-      }
-      keys <- vapply(seq_along(record_list), function(i) {
-        rec <- record_list[[i]]
-        rec_id <- rec$id
-        rec_doi <- rec$doi
-        if (!is.null(rec_id) && nzchar(as.character(rec_id))) {
-          paste0("id:", as.character(rec_id))
-        } else if (!is.null(rec_doi) && nzchar(as.character(rec_doi))) {
-          paste0("doi:", as.character(rec_doi))
-        } else {
-          paste0("idx:", i)
-        }
-      }, character(1))
-      keep <- !duplicated(keys)
-      record_list[keep]
-    }
-
-    concept_recid <- sub("^.*(?:zenodo\\.|/)([0-9]+)$", "\\1", concept_doi, perl = TRUE)
-    records_recid <- list()
-    if (grepl("^[0-9]+$", concept_recid)) {
-      records_recid <- zenodo_records(sprintf("conceptrecid:%s", concept_recid))
-    }
-    records_doi <- zenodo_records(sprintf('conceptdoi:"%s"', concept_doi))
-
-    records <- list()
-    if (!is.null(records_recid)) {
-      records <- c(records, records_recid)
-    }
-    if (!is.null(records_doi)) {
-      records <- c(records, records_doi)
-    }
-    records <- dedupe_records(records)
-
-    if (is.null(records) || length(records) == 0) {
-      if (is.null(release_error) || !nzchar(release_error)) {
-        release_error <- "No release records found for this concept DOI."
-      }
-    } else {
-      rows <- lapply(records, function(record) {
-        metadata <- record$metadata
-        version <- if (!is.null(metadata$version) && nzchar(as.character(metadata$version))) {
-          as.character(metadata$version)
-        } else {
-          "-"
-        }
-        publication_date <- if (!is.null(metadata$publication_date) && nzchar(as.character(metadata$publication_date))) {
-          as.character(metadata$publication_date)
-        } else if (!is.null(record$created) && nzchar(as.character(record$created))) {
-          substr(as.character(record$created), 1, 10)
-        } else {
-          "-"
-        }
-        doi <- if (!is.null(record$doi) && nzchar(as.character(record$doi))) as.character(record$doi) else ""
-        doi_cell <- if (nzchar(doi)) sprintf("[%s](https://doi.org/%s)", doi, doi) else "-"
-        record_url <- ""
-        if (is.list(record$links) && !is.null(record$links$html) && nzchar(as.character(record$links$html))) {
-          record_url <- as.character(record$links$html)
-        } else if (nzchar(doi)) {
-          record_url <- sprintf("https://doi.org/%s", doi)
-        }
-        files <- if (is.list(record$files)) record$files else list()
-        pdf_file <- NULL
-        if (length(files) > 0) {
-          for (f in files) {
-            key <- if (!is.null(f$key)) as.character(f$key) else ""
-            if (grepl("\\.pdf$", key, ignore.case = TRUE)) {
-              pdf_file <- f
-              break
-            }
-          }
-        }
-        download_url <- extract_pdf_url(pdf_file)
-        if (!nzchar(download_url)) {
-          download_url <- record_url
-        }
-        download_cell <- if (nzchar(download_url)) {
-          sprintf("[Download](%s)", download_url)
-        } else {
-          "-"
-        }
-        record_cell <- if (nzchar(record_url)) {
-          sprintf("[Record](%s)", record_url)
-        } else {
-          "-"
-        }
-
-        data.frame(
-          Version = version,
-          `Release Date` = publication_date,
-          DOI = doi_cell,
-          Download = download_cell,
-          Record = record_cell,
-          stringsAsFactors = FALSE,
-          check.names = FALSE
-        )
-      })
-
-      release_rows <- do.call(rbind, rows)
-      if ("Release Date" %in% names(release_rows)) {
-        sort_idx <- order(release_rows[["Release Date"]], decreasing = TRUE)
-        release_rows <- release_rows[sort_idx, , drop = FALSE]
-      }
-    }
-  }
-}
-```
-
-```{r, results='asis'}
-if (!is.null(release_rows) && nrow(release_rows) > 0) {
-  table_format <- if (knitr::is_html_output()) "html" else "pipe"
-  print(knitr::kable(release_rows, format = table_format, escape = FALSE))
-} else if (!identical(concept_doi_url, "")) {
-  cat(sprintf(
-    "Could not resolve release history during render (%s). See Zenodo concept page: [%s](%s)",
-    ifelse(is.null(release_error), "unknown reason", release_error),
-    concept_doi,
-    concept_doi_url
-  ))
-} else {
-  cat("Concept DOI missing in frontmatter.")
-}
+})();
+</script>
 ```

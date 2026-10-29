@@ -2,67 +2,24 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Build Commands
+## Commands
 
 ```bash
-make build-index          # Render IPBES_Data_Vision.qmd → _site/index.html
-make build-older-release  # Render older-releases.qmd → _site/older-releases.html
-make build-pdf            # Render versioned PDF → build/ and _site/assets/...-latest.pdf
-make build                # Run all targets (HTML pages + PDF)
-make clean                # Remove _site/, build/, and LaTeX temp files
+make preview   # quarto preview of IPBES_Data_Vision.qmd
+make build     # python3 scripts/release.py build → _site/ + build/*.pdf (version "<v>-draft", no DOI)
+make clean
+python3 scripts/release.py prepare --tag v1.2-rc.1 --prerelease   # pre-release build, no Zenodo
 ```
 
-PDF build accepts an optional injected DOI:
-```bash
-IPBES_DOI="10.5281/zenodo.XXXXXXX" make build-pdf
-```
+There is no test suite; CI (`pr-check.yml`) checks that `release.py build` renders. `release.py prepare` without `--prerelease` and `release.py publish` talk to Zenodo; never run them against production (`ZENODO_TARGET=production`) without being asked.
 
-Local requirements: R, Quarto, TinyTeX.
+Requirements: R (`rmarkdown`, `knitr`; `jsonlite` comes with them), Quarto, TinyTeX (LuaLaTeX), Python 3 (stdlib only).
 
 ## Architecture
 
-### Single Source of Truth
-
-`IPBES_Data_Vision.qmd` is the canonical source for both content and release metadata. Its YAML frontmatter drives everything — HTML subtitle, PDF title page, Zenodo DOI reservation, and the release workflow. Required frontmatter fields:
-
-- `title`, `version`, `release_date`, `concept_doi`, `contact_email`, `release_notes`, `editors`
-
-When `IPBES_DOI` env var is absent, outputs show `"Will be inserted upon release"` as a placeholder.
-
-### PDF Title Page
-
-`templates/title.tex` is a Pandoc template partial referenced from the frontmatter (`template-partials`). It reads metadata fields directly from frontmatter — nothing is hardcoded. The `pdf` format is only rendered when `IPBES_BUILD_PDF=true` is set (to avoid slow PDF builds during HTML-only development).
-
-### Older Releases Page
-
-`older-releases.qmd` queries Zenodo live using `concept_doi` from the main document's frontmatter. It does **not** read a local `releases/` folder or any committed PDFs.
-
-### CI/CD Workflows
-
-**`pr-check.yml`** — validates that HTML and PDF build cleanly; runs on PRs to `main`. Injects `IPBES_VERSION=pr-<#>`, `IPBES_BUILD_PDF=true`, `IPBES_DOI=PENDING`.
-
-**`release.yml`** — triggered on GitHub Release published. Pipeline:
-1. Resolves Zenodo target (`sandbox` vs `production`) via `ZENODO_TARGET` repo variable
-2. Reads `version` and `concept_doi` from frontmatter via Rscript
-3. Reserves a new Zenodo version DOI via the Zenodo API (Python/urllib, no third-party libraries)
-4. Injects the reserved DOI as `IPBES_DOI` env var for the build
-5. Appends the DOI to the GitHub release notes
-6. Builds HTML website and PDF artifact
-7. Uploads PDF to Zenodo draft (as draft — requires manual publish on Zenodo)
-8. Uploads PDF to GitHub release assets
-9. Deploys `_site/` to `gh-pages` branch
-
-### Zenodo Environment Switching
-
-Switch between sandbox and production by changing the `ZENODO_TARGET` repository variable (`sandbox` | `production`). Each target has its own API base URL variable and token secret:
-
-| Target     | URL variable              | Token secret           |
-|------------|---------------------------|------------------------|
-| production | `ZENODO_API_BASE`         | `ZENODO_TOKEN`         |
-| sandbox    | `ZENODO_SANDBOX_API_BASE` | `ZENODO_SANDBOX_TOKEN` |
-
-### Governance Rules
-
-- Metadata in outputs must always come from frontmatter, never hardcoded.
-- `IMPLEMENTATION_PLAN.md` and `README.md` must be updated when architecture or workflow changes.
-- All Zenodo API calls in CI use Python stdlib only (no `requests`, no extra dependencies).
+- `IPBES_Data_Vision.qmd` is the single source: content plus frontmatter metadata (`version`, `release_notes`, `editors`, `contact_email`, and a `zenodo:` block with `concept_doi`, `sandbox_concept_doi`, `access_right`, `license`). Release date and version DOI are never stored; they are injected at build time.
+- `scripts/release.py` is the only build entry point. `render()` passes `version`, `release_date`, `release_year`, `doi`, `prerelease` twice: as `-M key=value` for Pandoc templates (`templates/title.tex`, `{{< meta >}}`) and as `IPBES_<KEY>` env vars for the R chunks, because `-M` does not reach `rmarkdown::metadata`.
+- Releases are driven by GitHub releases (`release.yml`): a pre-release tag `v<version>-<suffix>` builds without DOI and deploys to `gh-pages:/preview/`; a release tag must equal `v<version>`, reserves a DOI via Zenodo `newversion` on the latest record of the concept, fills the draft (metadata + PDF) and attaches `site.tar.gz` + `release.json` to the release. `publish.yml` (manual) mints the draft and deploys that site to the `gh-pages` root (production target only).
+- Zenodo sandbox pre-reserves DOIs with the production prefix `10.5281`; `Zenodo.doi()` rewrites them to `10.5072`, which is what the sandbox mints.
+- `older-releases.qmd` lists versions client-side (browser `fetch` to the Zenodo records API), so it is always current without re-rendering.
+- `admin.qmd` is the maintainer guide (published, unlinked). Update it and `README.md` when the workflow changes.

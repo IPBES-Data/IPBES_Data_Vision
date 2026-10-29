@@ -1,0 +1,57 @@
+name: Publish release
+
+# Run after reviewing the Zenodo draft created by the Release workflow.
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to publish, e.g. v1.2"
+        required: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    env:
+      TAG: ${{ inputs.tag }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download release.json and site from the GitHub release
+        id: release
+        run: |
+          gh release download "$TAG" -p release.json -p site.tar.gz -D build
+          echo "doi=$(jq -r .doi build/release.json)" >> "$GITHUB_OUTPUT"
+          echo "target=$(jq -r .target build/release.json)" >> "$GITHUB_OUTPUT"
+
+      - name: Publish the Zenodo draft (mints the DOI)
+        env:
+          ZENODO_TOKEN: ${{ secrets.ZENODO_TOKEN }}
+          ZENODO_SANDBOX_TOKEN: ${{ secrets.ZENODO_SANDBOX_TOKEN }}
+        run: python3 scripts/release.py publish build/release.json
+
+      - name: Add the DOI to the release notes
+        env:
+          DOI: ${{ steps.release.outputs.doi }}
+        run: |
+          gh release view "$TAG" --json body -q .body > build/notes.md
+          printf '\n\nVersion DOI: https://doi.org/%s (Zenodo %s)\n' "$DOI" "${{ steps.release.outputs.target }}" >> build/notes.md
+          gh release edit "$TAG" --notes-file build/notes.md
+
+      - name: Unpack site
+        run: mkdir _site && tar -xzf build/site.tar.gz -C _site
+
+      # Sandbox DOIs are test records, so only production releases replace the official site.
+      - name: Deploy site
+        if: steps.release.outputs.target == 'production'
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ github.token }}
+          publish_dir: _site

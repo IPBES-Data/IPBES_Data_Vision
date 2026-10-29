@@ -1,0 +1,91 @@
+---
+title: "Admin: Editing and Releases"
+format:
+  html:
+    output-file: admin.html
+    toc: true
+    number-sections: true
+execute:
+  echo: false
+---
+
+This page is for maintainers. It is published with the site but not linked from it.
+
+## Overview
+
+```{mermaid}
+flowchart TD
+  E["Edit on a branch, open PR"] --> C["PR check: renders HTML + PDF (downloadable artifact)"]
+  C --> M["Merge to main"]
+  M --> P["GitHub pre-release v1.2-rc.1"]
+  M --> R["GitHub release v1.2"]
+  P --> P1["Build without DOI, attach PDF, deploy to /preview/"]
+  R --> R1["Reserve DOI, build, upload Zenodo draft, attach PDF"]
+  R1 --> Q{"Zenodo draft + PDF OK?"}
+  Q -->|yes| PUB["Run 'Publish release' workflow"]
+  PUB --> PUB1["Mint DOI on Zenodo, deploy site, add DOI to release notes"]
+  Q -->|no| X["Delete the Zenodo draft and the GitHub release + tag"]
+```
+
+| Build | Version shown | DOI | Where it goes |
+|---|---|---|---|
+| Local / PR check | `1.2-draft` | "Will be inserted upon release" | `_site/`, PR artifact |
+| Pre-release `v1.2-rc.1` | `1.2-rc.1` | None (pre-release) | GitHub pre-release assets, `/preview/` on the site |
+| Release `v1.2` | `1.2` | Reserved Zenodo DOI | Zenodo draft, GitHub release assets; site after publishing |
+
+## Editing
+
+1. Create a branch from `main` and edit `IPBES_Data_Vision.qmd`. `make preview` shows changes live; `make build` renders the site and PDF.
+2. Open a pull request. The PR check renders everything; download the `site` artifact from the check run to read the PDF.
+3. Merge when reviewed.
+
+## Pre-release (no DOI)
+
+1. On GitHub, *Releases → Draft a new release*.
+2. Tag: `v<version>-<suffix>`, e.g. `v1.2-rc.1`, where `<version>` is the `version` in the frontmatter.
+3. Tick **Set as a pre-release** and publish.
+4. The *Release* workflow attaches the PDF to the pre-release and deploys the site to <https://ipbes-data.github.io/IPBES_Data_Vision/preview/>. Zenodo is not contacted.
+
+## Release (with DOI)
+
+1. In a PR, set `version` (e.g. `"1.2"`) and `release_notes` in the frontmatter, and merge it.
+2. On GitHub, draft a new release with tag `v1.2` (exactly `v` + `version`), **not** a pre-release, and publish.
+3. The *Release* workflow:
+   - checks the tag against the frontmatter version,
+   - creates the next Zenodo version as a draft and reserves its DOI,
+   - renders site and PDF with the DOI and today's date,
+   - fills the Zenodo draft: PDF, title, version, date, editors, access right, licence, release notes,
+   - attaches PDF, `site.tar.gz` and `release.json` to the GitHub release.
+
+   The official site is **not** changed yet; the reserved DOI does not resolve until it is minted.
+4. Review the Zenodo draft (link in the run log and in `release.json`) and the attached PDF.
+5. *Actions → Publish release → Run workflow*, enter the tag (`v1.2`). This publishes the Zenodo draft (minting the DOI), deploys the attached site, and adds the DOI to the release notes.
+
+If the draft is wrong: delete the draft on Zenodo, delete the GitHub release and its tag, fix, and release again.
+
+## Zenodo targets
+
+`ZENODO_TARGET` (repository variable) selects `sandbox` or `production`; it must be set. The concept DOI for each target is in the frontmatter (`zenodo.concept_doi`, `zenodo.sandbox_concept_doi`). Sandbox releases are minted on sandbox.zenodo.org and are **never** deployed to the official site.
+
+Each target needs one manually published record first: create an upload on Zenodo, publish it, and put its concept ("all versions") DOI in the frontmatter.
+
+## Repository settings
+
+*Settings → Secrets and variables → Actions*:
+
+| Name | Kind | Value |
+|---|---|---|
+| `ZENODO_TARGET` | variable | `sandbox` or `production` |
+| `ZENODO_SANDBOX_TOKEN` | secret | sandbox.zenodo.org token with `deposit:write` and `deposit:actions` |
+| `ZENODO_TOKEN` | secret | zenodo.org token with `deposit:write` and `deposit:actions` |
+
+GitHub Pages must serve the `gh-pages` branch.
+
+## Running a release locally
+
+The same script runs locally (needs R, Quarto, TinyTeX and the token in the environment):
+
+```bash
+ZENODO_TARGET=sandbox ZENODO_SANDBOX_TOKEN=... python3 scripts/release.py prepare --tag v1.2
+python3 scripts/release.py publish build/release.json
+```

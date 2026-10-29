@@ -1,5 +1,8 @@
-name: Release Publish
+name: Release
 
+# A GitHub pre-release (tag v1.2-rc.1) builds without DOI and deploys to /preview/.
+# A GitHub release (tag v1.2) reserves a Zenodo DOI and fills a Zenodo draft;
+# the "Publish release" workflow mints it and deploys the site.
 on:
   release:
     types: [published]
@@ -8,93 +11,54 @@ permissions:
   contents: write
 
 concurrency:
-  group: release-pages
+  group: release
   cancel-in-progress: false
 
 jobs:
-  build_and_deploy:
+  prepare:
     runs-on: ubuntu-latest
     env:
-      IPBES_RELEASE_DATE: ${{ github.event.release.published_at }}
-      IPBES_BUILD_PDF: "true"
-      IPBES_OUTPUT_DIR: _site
-      ZENODO_TARGET: ${{ vars.ZENODO_TARGET }}
-      ZENODO_API_BASE: ${{ vars.ZENODO_API_BASE }}
-      ZENODO_SANDBOX_API_BASE: ${{ vars.ZENODO_SANDBOX_API_BASE }}
-
+      TAG: ${{ github.event.release.tag_name }}
+      GH_TOKEN: ${{ github.token }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup R
-        id: setup-r
-        uses: r-lib/actions/setup-r@v2
+      - uses: r-lib/actions/setup-r@v2
         with:
           use-public-rspm: true
 
-      - name: Cache R packages
-        uses: actions/cache@v4
-        with:
-          path: ${{ env.R_LIBS_USER }}
-          key: ${{ runner.os }}-r-${{ steps.setup-r.outputs.installed-r-version }}-${{ hashFiles('**/DESCRIPTION') }}
-          restore-keys: ${{ runner.os }}-r-${{ steps.setup-r.outputs.installed-r-version }}-
-
-      - name: Install R dependencies
-        uses: r-lib/actions/setup-r-dependencies@v2
+      # Installs and caches the R packages
+      - uses: r-lib/actions/setup-r-dependencies@v2
         with:
           packages: |
             any::rmarkdown
             any::knitr
-            any::httr2
 
-      - name: Setup Quarto
-        uses: quarto-dev/quarto-actions/setup@v2
+      - uses: quarto-dev/quarto-actions/setup@v2
 
-      - name: Setup TinyTeX
-        uses: r-lib/actions/setup-tinytex@v2
+      - uses: r-lib/actions/setup-tinytex@v2
 
-      - name: Resolve Zenodo target config
+      - name: Build pre-release (no DOI, no Zenodo)
+        if: github.event.release.prerelease
+        run: python3 scripts/release.py prepare --tag "$TAG" --prerelease
+
+      - name: Reserve DOI, build, and fill the Zenodo draft
+        if: ${{ !github.event.release.prerelease }}
         env:
+          ZENODO_TARGET: ${{ vars.ZENODO_TARGET }}
           ZENODO_TOKEN: ${{ secrets.ZENODO_TOKEN }}
           ZENODO_SANDBOX_TOKEN: ${{ secrets.ZENODO_SANDBOX_TOKEN }}
-        run: python3 scripts/release_pipeline.py --state-file .release-state.env resolve-target
+        run: python3 scripts/release.py prepare --tag "$TAG"
 
-      - name: Read version and concept DOI from frontmatter
-        id: frontmatter
-        run: python3 scripts/release_pipeline.py --state-file .release-state.env read-frontmatter --qmd IPBES_Data_Vision.qmd
+      - name: Attach PDF, site and release.json to the GitHub release
+        run: |
+          tar -czf build/site.tar.gz -C _site .
+          gh release upload "$TAG" build/*.pdf build/site.tar.gz build/release.json --clobber
 
-      - name: Reserve Zenodo version DOI
-        id: reserve_doi
-        run: python3 scripts/release_pipeline.py --state-file .release-state.env reserve-doi
-
-      - name: Append version DOI to release notes
-        env:
-          RESERVED_DOI: ${{ steps.reserve_doi.outputs.reserved_doi }}
-          RELEASE_ID: ${{ github.event.release.id }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: python3 scripts/release_pipeline.py --state-file .release-state.env append-github-release-doi
-
-      - name: Build website and PDF artifacts
-        id: build_artifacts
-        run: python3 scripts/release_pipeline.py --state-file .release-state.env build-artifacts --qmd IPBES_Data_Vision.qmd --build-dir build --output-dir _site
-
-      - name: Upload PDF and release notes to Zenodo draft
-        env:
-          RELEASE_ID: ${{ github.event.release.id }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: python3 scripts/release_pipeline.py --state-file .release-state.env upload-zenodo-draft --pdf-file "${{ steps.build_artifacts.outputs.pdf_path }}"
-
-      - name: Upload PDF to GitHub release
-        uses: softprops/action-gh-release@v2
-        with:
-          files: ${{ steps.build_artifacts.outputs.pdf_path }}
-          overwrite_files: true
-
-      - name: Deploy website to gh-pages branch
+      - name: Deploy pre-release to /preview/
+        if: github.event.release.prerelease
         uses: peaceiris/actions-gh-pages@v4
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_branch: gh-pages
+          github_token: ${{ github.token }}
           publish_dir: _site
-          force_orphan: true
-          enable_jekyll: false
+          destination_dir: preview
