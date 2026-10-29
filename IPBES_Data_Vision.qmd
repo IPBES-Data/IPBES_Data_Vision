@@ -5,7 +5,7 @@ subtitle: "Version {{< meta version >}} · {{< meta release_date >}}"
 # adds them from the release form. title, produced_by, publisher, contact_email, editors
 # and next_version (the version this text is prepared as, chosen at export) are updated
 # by the Google Doc import; the text itself is in _content.md.
-next_version: ""
+next_version: "2.0"
 produced_by: "IPBES task force on knowledge and data"
 publisher: "IPBES secretariat, Bonn, Germany"
 contact_email: "tsu.data@ipbes.net"
