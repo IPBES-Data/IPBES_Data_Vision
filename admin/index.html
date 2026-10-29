@@ -5648,7 +5648,7 @@ color: #1f6f43; cursor: pointer; }
 <h3 class="anchored" data-anchor-id="github-settings">1. GitHub settings</h3>
 <ol type="1">
 <li><em>Settings → Pages</em>: <em>Deploy from a branch</em>, branch <strong><code>gh-pages</code></strong>, folder <code>/ (root)</code>.</li>
-<li><em>Settings → Actions → General → Workflow permissions</em>: tick <strong>Allow GitHub Actions to create and approve pull requests</strong> (the import opens its review page this way).</li>
+<li><em>Settings → Actions → General → Workflow permissions</em>: tick <strong>Allow GitHub Actions to create and approve pull requests</strong> (the import opens its review page this way). This is only possible once an owner of the IPBES-Data organisation has allowed it for the organisation: <a href="https://github.com/organizations/IPBES-Data/settings/actions" class="uri">https://github.com/organizations/IPBES-Data/settings/actions</a> → <em>Workflow permissions</em> → same box → <em>Save</em>.</li>
 <li><em>Settings → General → Pull Requests</em>: <strong>Allow auto-merge</strong> (optional; lets a pull request merge itself once its check passes).</li>
 <li><em>Settings → Branches</em>: <code>main</code> requires the status check <strong><code>build</code></strong> (“Check website and PDF build”), so nothing broken reaches the website.</li>
 <li><em>Settings → Collaborators</em>: everyone who uses the panel needs <strong>Write</strong> access.</li>
@@ -5766,10 +5766,14 @@ color: #1f6f43; cursor: pointer; }
 <td>The Zenodo token belongs to another account than the record: create it in the owning account.</td>
 </tr>
 <tr class="even">
+<td>Import: the review page is not opened; “GitHub Actions is not permitted to create or approve pull requests”</td>
+<td>Step 1.2 (organisation setting first, then the repository’s).</td>
+</tr>
+<tr class="odd">
 <td>A pull request stays open although its check is green</td>
 <td>Auto-merge sometimes does not fire: click <em>Merge</em> on the pull request.</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><em>All versions</em> shows “HTTP 403” under pre-releases</td>
 <td>GitHub’s limit of 60 requests per hour per visitor; it clears within the hour.</td>
 </tr>
