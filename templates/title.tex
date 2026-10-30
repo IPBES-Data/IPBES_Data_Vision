@@ -81,8 +81,8 @@ $endif$
 
 % Watermark at the bottom of every page: where this PDF comes from (web_url and watermark come from release.py)
 $if(web_url)$
-\AddToHook{shipout/foreground}{\put(\dimexpr0.5\paperwidth\relax,\dimexpr-\paperheight+0.45cm\relax){%
-  \makebox[0pt]{\fontsize{7}{8}\selectfont\color{gray}$watermark$ \url{$web_url$}}}}
+\AddToHook{shipout/foreground}{\put(\dimexpr0.5\paperwidth\relax,\dimexpr-\paperheight+1.0cm\relax){%
+  \makebox[0pt]{\fontsize{9}{11}\selectfont\color{darkgray}$watermark$ {\hypersetup{urlcolor=darkgray}\url{$web_url$}}}}}
 $endif$
 
 % DOI text shared by the DOI line and the suggested citation
