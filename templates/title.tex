@@ -81,6 +81,13 @@ $endif$
 
 % Watermark at the bottom of every page: where this PDF comes from (web_url and watermark come from release.py)
 $if(web_url)$
+% Large faint diagonal watermark behind the text of every page: version and address.
+\AddToHook{shipout/background}{\put(\dimexpr0.5\paperwidth\relax,\dimexpr-0.5\paperheight\relax){%
+  \makebox(0,0){\rotatebox{55}{\color[gray]{0.86}\begin{tabular}{c}
+    \fontsize{64}{72}\selectfont\bfseries $watermark_title$\\[0.4cm]
+    \fontsize{16}{19}\selectfont \nolinkurl{$web_url$}
+  \end{tabular}}}}}
+% Small line at the bottom of every page, with the address as a link.
 \AddToHook{shipout/foreground}{\put(\dimexpr0.5\paperwidth\relax,\dimexpr-\paperheight+1.0cm\relax){%
   \makebox[0pt]{\fontsize{9}{11}\selectfont\color{darkgray}$watermark$ {\hypersetup{urlcolor=darkgray}\url{$web_url$}}}}}
 $endif$

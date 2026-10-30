@@ -132,15 +132,15 @@ def render(meta: dict) -> Path:
     """Render the website and the PDF; meta goes to the templates (-M) and into _generated/ (write_includes)."""
     meta = {key: meta.get(key, "") for key in
             ("version", "release_date", "release_year", "doi", "prerelease", "release_notes",
-             "current_release", "web_url", "watermark")}
+             "current_release", "web_url", "watermark", "watermark_title")}
     meta["current_release"] = meta["current_release"] or versions.fmt(versions.latest_release(versions.tags()))
     # Every page of the PDF says where it comes from: the permanent web version of this version
     # (pre-releases and releases are kept at versions/<version>/), or the repository for drafts.
     if meta["version"] in ("", "draft"):
-        meta["web_url"] = REPOSITORY
+        meta["web_url"], meta["watermark_title"] = REPOSITORY, "Unpublished working draft"
         meta["watermark"] = f"Unpublished working draft after {versions.based_on(versions.tags())} · generated from"
     else:
-        meta["web_url"] = f"{PUBLIC_SITE}versions/{meta['version']}/"
+        meta["web_url"], meta["watermark_title"] = f"{PUBLIC_SITE}versions/{meta['version']}/", f"Version {meta['version']}"
         meta["watermark"] = f"Version {meta['version']} · generated from"
     write_includes(meta, frontmatter())
     flags = [arg for key, value in meta.items() if value and key != "release_notes" for arg in ("-M", f"{key}={value}")]
@@ -149,7 +149,14 @@ def render(meta: dict) -> Path:
     subprocess.run(["quarto", "render", QMD, "--to", "pdf", "--output", pdf.name, "--output-dir", str(BUILD), *flags],
                    check=True)
     (SITE / "assets").mkdir(parents=True, exist_ok=True)
-    shutil.copy2(pdf, SITE / "assets" / f"{PDF_PREFIX}-latest.pdf")
+    # The download keeps its versioned name (e.g. ...-v2.0-beta.1.pdf); ...-latest.pdf stays for older links.
+    for name in (pdf.name, f"{PDF_PREFIX}-latest.pdf"):
+        shutil.copy2(pdf, SITE / "assets" / name)
+    latest = f"assets/{PDF_PREFIX}-latest.pdf"
+    for page in SITE.rglob("*.html"):
+        text = page.read_text()
+        if latest in text:
+            page.write_text(text.replace(latest, f"assets/{pdf.name}"))
     print(f"Built {SITE}/ and {pdf}")
     return pdf
 

@@ -24,7 +24,7 @@ format:
 
 <script>
 // The PDF of 1.0 is on Zenodo, so the header's PDF button leads there on this page.
-document.querySelectorAll('a[href$="IPBES-Data-Management-Vision-latest.pdf"]').forEach((a) => {
+document.querySelectorAll('a[href*="assets/IPBES-Data-Management-Vision-"][href$=".pdf"]').forEach((a) => {
   a.href = "https://doi.org/10.5281/zenodo.5513474";
   a.lastChild.textContent = " Version 1.0 on Zenodo";
 });

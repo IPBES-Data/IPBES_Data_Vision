@@ -4,7 +4,7 @@
 const hideIfMissing = (selector, page = "") => document.querySelectorAll(selector).forEach((a) =>
   fetch(a.href + page, { method: "HEAD" }).then((r) => { if (!r.ok) a.closest("li").style.display = "none"; })
     .catch(() => {}));
-hideIfMissing('a[href$="IPBES-Data-Management-Vision-latest.pdf"]');
+hideIfMissing('a[href*="assets/IPBES-Data-Management-Vision-"][href$=".pdf"]');
 hideIfMissing('a[href$="/preview/"]', "index.html");
 if (location.pathname.includes("/preview/"))
   document.querySelectorAll('a[href$="/preview/"]').forEach((a) => a.classList.add("active"));
