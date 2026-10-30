@@ -14,16 +14,18 @@ website:
     background: light
     logo: logos/ipbes-data.jpg
     logo-alt: "IPBES-Data"
-    right:
-      - text: "The Vision"
+    # The three main buttons sit centred and never move (styles.css); page-specific ones go on the right.
+    left:
+      - text: "Latest release"
         icon: book
         href: https://ipbes-data.github.io/IPBES_Data_Vision/   # always the main site, also from the preview
-      - text: "All versions"
-        icon: clock-history
-        href: older-releases.html
-      - text: "Pre-release"
+      - text: "Latest pre-release"
         icon: eye
         href: https://ipbes-data.github.io/IPBES_Data_Vision/preview/
+      - text: "All versions"
+        icon: clock-history
+        href: https://ipbes-data.github.io/IPBES_Data_Vision/older-releases.html
+    right:
       - text: "Download PDF"
         icon: download
         href: assets/IPBES-Data-Management-Vision-latest.pdf
