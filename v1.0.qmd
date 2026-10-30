@@ -3,7 +3,7 @@ title: "IPBES Long-term Vision on Data and Knowledge Management"
 format:
   html:
     output-file: v1.0.html
-    toc: false
+    toc: true
 ---
 
 ```{=html}
@@ -16,20 +16,19 @@ format:
 <div><div class="label">Editors</div>Debora Pignatari Drucker, David Thau, Rainer M. Krug, Joy A. Kumagai, Aidin Niamir</div>
 </div>
 <details><summary>How to cite</summary><p>IPBES (2022): <i>IPBES Long-term Vision on Data and Knowledge Management</i> ver. 1.0, Drucker, D.P., Thau, D., Krug, R.M., Kumagai, J.A., and Niamir, A. (eds.). IPBES secretariat, Bonn, Germany. DOI: <a href="https://doi.org/10.5281/zenodo.5513474">10.5281/zenodo.5513474</a></p></details>
+<details><summary>About this text</summary><p>The text below is version 1.0 as published on Zenodo. The same text was published, marked as a draft, as Appendix III of document IPBES/9/INF/14 (4 May 2022) for the ninth session of the IPBES Plenary; it differs from version 1.0 only in four places: the preamble says "describes a draft for an overarching vision" and "The vision would be reviewed every two years", the roadmap's sub-headings are numbered "A-" and "B-", and the annex is titled "Definitions".</p></details>
 </div>
+
+<p>Version 1.0 is the current released version. Version 2.0 is in preparation: its latest pre-release, for review and not for citation, is at the <a href="https://ipbes-data.github.io/IPBES_Data_Vision/preview/">Pre-release</a> button; all versions are listed under <a href="older-releases.html">All versions</a>.</p>
 <div class="vision-start"></div>
 
-<p>Version 1.0 is the current released version of the IPBES long-term vision on data and knowledge management, prepared by the IPBES task force on knowledge and data. Its text is available from Zenodo.</p>
-
-<p><a class="btn btn-success" href="https://doi.org/10.5281/zenodo.5513474"><i class="bi bi-box-arrow-up-right"></i> Version 1.0 on Zenodo</a></p>
-
-<p>Version 2.0 is in preparation. Its latest pre-release, for review and not for citation, is at <a href="preview/">pre-release preview</a>; all versions are listed under <a href="older-releases.html">All versions</a>.</p>
-
 <script>
-// The text of 1.0 is only on Zenodo, so the header's PDF button leads there on this page.
+// The PDF of 1.0 is on Zenodo, so the header's PDF button leads there on this page.
 document.querySelectorAll('a[href$="IPBES-Data-Management-Vision-latest.pdf"]').forEach((a) => {
   a.href = "https://doi.org/10.5281/zenodo.5513474";
   a.lastChild.textContent = " Version 1.0 on Zenodo";
 });
 </script>
 ```
+
+{{< include versions/v1.0.md >}}
