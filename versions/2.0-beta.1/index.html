@@ -97,22 +97,24 @@ ul.task-list li input[type="checkbox"] {
   <span class="navbar-toggler-icon"></span>
 </button>
           <div class="collapse navbar-collapse" id="navbarCollapse">
-            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
   <li class="nav-item">
     <a class="nav-link" href="https://ipbes-data.github.io/IPBES_Data_Vision/"> <i class="bi bi-book" role="img">
 </i> 
-<span class="menu-text">The Vision</span></a>
-  </li>  
-  <li class="nav-item">
-    <a class="nav-link" href="./older-releases.html"> <i class="bi bi-clock-history" role="img">
-</i> 
-<span class="menu-text">All versions</span></a>
+<span class="menu-text">Latest release</span></a>
   </li>  
   <li class="nav-item">
     <a class="nav-link" href="https://ipbes-data.github.io/IPBES_Data_Vision/preview/"> <i class="bi bi-eye" role="img">
 </i> 
-<span class="menu-text">Pre-release</span></a>
+<span class="menu-text">Latest pre-release</span></a>
   </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="https://ipbes-data.github.io/IPBES_Data_Vision/older-releases.html"> <i class="bi bi-clock-history" role="img">
+</i> 
+<span class="menu-text">All versions</span></a>
+  </li>  
+</ul>
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
   <li class="nav-item">
     <a class="nav-link" href="./assets/IPBES-Data-Management-Vision-v2.0-beta.1.pdf" target="_blank"> <i class="bi bi-download" role="img">
 </i> 
@@ -250,15 +252,19 @@ ul.task-list li input[type="checkbox"] {
 
 </main> <!-- /main -->
 <script>
-// Hide header buttons whose target does not exist on this site: the PDF (e.g. the main site before 2.0) and the
-// pre-release preview (none since the last release). Mark the pre-release button active on the preview itself.
-const hideIfMissing = (selector, page = "") => document.querySelectorAll(selector).forEach((a) =>
-  fetch(a.href + page, { method: "HEAD" }).then((r) => { if (!r.ok) a.closest("li").style.display = "none"; })
-    .catch(() => {}));
-hideIfMissing('a[href*="assets/IPBES-Data-Management-Vision-"][href$=".pdf"]');
-hideIfMissing('a[href$="/preview/"]', "index.html");
-if (location.pathname.includes("/preview/"))
-  document.querySelectorAll('a[href$="/preview/"]').forEach((a) => a.classList.add("active"));
+// Header buttons whose target does not exist on this site: the PDF (e.g. the main site before 2.0) is hidden
+// (it is on the right, so nothing moves); "Latest pre-release" (none since the last release) stays in place,
+// greyed out, so the three centred buttons never move. Mark the current section active.
+const check = (selector, page, missing) => document.querySelectorAll(selector).forEach((a) =>
+  fetch(a.href + page, { method: "HEAD" }).then((r) => { if (!r.ok) missing(a); }).catch(() => {}));
+check('a[href*="assets/IPBES-Data-Management-Vision-"][href$=".pdf"]', "", (a) => { a.closest("li").style.visibility = "hidden"; });
+check('a[href$="/preview/"]', "index.html", (a) => { a.classList.add("unavailable"); a.title = "There is no pre-release at the moment."; });
+const here = location.pathname;
+document.querySelectorAll(".navbar .nav-link").forEach((a) => a.classList.remove("active"));
+const mark = (selector) => document.querySelectorAll(selector).forEach((a) => a.classList.add("active"));
+if (here.endsWith("older-releases.html")) mark('a[href$="older-releases.html"]');
+else if (here.includes("/preview/")) mark('a[href$="/preview/"]');
+else if (!here.includes("/versions/")) mark('a[href$="/IPBES_Data_Vision/"]');
 </script>
 <script id="quarto-html-after-body" type="application/javascript">
   window.document.addEventListener("DOMContentLoaded", function (event) {

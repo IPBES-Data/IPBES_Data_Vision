@@ -3,8 +3,15 @@
 .navbar .navbar-nav .nav-link { border: 1px solid #1f6f43; border-radius: 6px; color: #1f6f43; padding: 0.3rem 0.8rem;
                                  margin-left: 0.5rem; }
 .navbar .navbar-nav .nav-link:hover, .navbar .navbar-nav .nav-link.active { background: #e8f2ec; }
-.navbar .navbar-nav .nav-item:last-child .nav-link { background: #1f6f43; color: #fff; }
-.navbar .navbar-nav .nav-item:last-child .nav-link:hover { background: #18583a; }
+/* Download PDF (on the right) is the main button. */
+.navbar .navbar-nav .nav-link[href*="IPBES-Data-Management-Vision-"][href$=".pdf"] { background: #1f6f43; color: #fff; }
+.navbar .navbar-nav .nav-link[href*="IPBES-Data-Management-Vision-"][href$=".pdf"]:hover { background: #18583a; }
+/* The three main buttons: centred in the header on wide screens, independent of the buttons on the right. */
+@media (min-width: 992px) {
+  .navbar .navbar-collapse > .navbar-nav.me-auto { position: absolute; left: 50%; transform: translateX(-50%); }
+}
+/* Latest pre-release while there is none: stays in place, greyed out. */
+.navbar .navbar-nav .nav-link.unavailable { border-color: #c8cdd2; color: #9aa0a6; pointer-events: none; }
 .navbar-logo { max-height: 44px; }
 /* Pre-release button in amber, like the pre-release banner. */
 .navbar .navbar-nav .nav-link[href$="/preview/"] { border-color: #c99a1a; color: #6b4a00; }
