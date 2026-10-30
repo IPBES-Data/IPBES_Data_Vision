@@ -114,7 +114,7 @@ ul.task-list li input[type="checkbox"] {
 <span class="menu-text">Pre-release</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="./assets/IPBES-Data-Management-Vision-latest.pdf" target="_blank"> <i class="bi bi-download" role="img">
+    <a class="nav-link" href="./assets/IPBES-Data-Management-Vision-v2.0-beta.1.pdf" target="_blank"> <i class="bi bi-download" role="img">
 </i> 
 <span class="menu-text">Download PDF</span></a>
   </li>  
@@ -242,7 +242,7 @@ Loading pre-releases from GitHub…
 const hideIfMissing = (selector, page = "") => document.querySelectorAll(selector).forEach((a) =>
   fetch(a.href + page, { method: "HEAD" }).then((r) => { if (!r.ok) a.closest("li").style.display = "none"; })
     .catch(() => {}));
-hideIfMissing('a[href$="IPBES-Data-Management-Vision-latest.pdf"]');
+hideIfMissing('a[href*="assets/IPBES-Data-Management-Vision-"][href$=".pdf"]');
 hideIfMissing('a[href$="/preview/"]', "index.html");
 if (location.pathname.includes("/preview/"))
   document.querySelectorAll('a[href$="/preview/"]').forEach((a) => a.classList.add("active"));
