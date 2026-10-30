@@ -177,6 +177,8 @@ Loading pre-releases from GitHub…
 <script>
 (() => {
   const link = (href, text) => `<a href="${href}" target="_blank" rel="noopener noreferrer">${text}</a>`;
+  // Every pre-release and release keeps its web version at versions/<version>/.
+  const web = (version) => link(`https://ipbes-data.github.io/IPBES_Data_Vision/versions/${version}/`, "Read online");
 
   // Fill box with a table built from fetch(url) → rows; on failure show fallback(message).
   const fill = async (box, url, toRows, header, fallback) => {
@@ -200,9 +202,10 @@ Loading pre-releases from GitHub…
     (json) => json.hits.hits.map((r) => {
       const pdf = (r.files || []).find((f) => /\.pdf$/i.test(f.key));
       return [r.metadata.version || "-", r.metadata.publication_date, link(`https://doi.org/${r.doi}`, r.doi),
-              pdf ? link(pdf.links.self, "PDF") : "-", link(r.links.self_html, "Record")];
+              r.metadata.version ? web(r.metadata.version) : "-", pdf ? link(pdf.links.self, "PDF") : "-",
+              link(r.links.self_html, "Record")];
     }),
-    ["Version", "Release date", "DOI", "Download", "Zenodo"],
+    ["Version", "Release date", "DOI", "Web", "Download", "Zenodo"],
     (msg) => `<p>Could not load releases (${msg}). See all versions on Zenodo: ` +
       `${link(`https://doi.org/${conceptDoi}`, conceptDoi)}</p>`);
 
@@ -212,10 +215,10 @@ Loading pre-releases from GitHub…
     `https://api.github.com/repos/${repo}/releases?per_page=100`,
     (list) => list.filter((r) => r.prerelease && !r.draft && !/-test\./.test(r.tag_name)).map((r) => {
       const pdf = r.assets.find((a) => /\.pdf$/i.test(a.name));
-      return [r.tag_name.replace(/^v/, ""), (r.published_at || "").slice(0, 10),
+      return [r.tag_name.replace(/^v/, ""), (r.published_at || "").slice(0, 10), web(r.tag_name.replace(/^v/, "")),
               pdf ? link(pdf.browser_download_url, "PDF") : "-", link(r.html_url, "GitHub")];
     }),
-    ["Version", "Date", "Download", "Release notes"],
+    ["Version", "Date", "Web", "Download", "Release notes"],
     (msg) => `<p>No pre-releases listed (${msg}). See ${link(`https://github.com/${repo}/releases`, "GitHub releases")}.</p>`);
 })();
 </script>
