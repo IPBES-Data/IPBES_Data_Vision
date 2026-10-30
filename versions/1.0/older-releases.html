@@ -171,14 +171,23 @@ Loading pre-releases from GitHub…
 </div>
 <style>
 #release-list table, #prerelease-list table { width: 100%; border-collapse: collapse; margin-top: 0.75rem; }
+/* Same column widths in both tables, so they line up: Version, Date, Web, DOI, PDF, Details. */
+#release-list table, #prerelease-list table { table-layout: fixed; font-size: 0.9rem; }
+#release-list th:nth-child(1), #prerelease-list th:nth-child(1) { width: 11%; }
+#release-list th:nth-child(2), #prerelease-list th:nth-child(2) { width: 14%; }
+#release-list th:nth-child(3), #prerelease-list th:nth-child(3) { width: 14%; }
+#release-list th:nth-child(4), #prerelease-list th:nth-child(4) { width: 26%; }
+#release-list th:nth-child(5), #prerelease-list th:nth-child(5) { width: 13%; }
 #release-list th, #prerelease-list th { text-align: left; padding: 0.55rem 1rem 0.55rem 0; border-bottom: 2px solid #d7dee6; }
-#release-list td, #prerelease-list td { padding: 0.6rem 1rem 0.6rem 0; border-bottom: 1px solid #e7ebef; white-space: nowrap; }
+#release-list td, #prerelease-list td { padding: 0.6rem 1rem 0.6rem 0; border-bottom: 1px solid #e7ebef; overflow-wrap: anywhere; }
 </style>
 <script>
 (() => {
   const link = (href, text) => `<a href="${href}" target="_blank" rel="noopener noreferrer">${text}</a>`;
   // Every pre-release and release keeps its web version at versions/<version>/.
   const web = (version) => link(`https://ipbes-data.github.io/IPBES_Data_Vision/versions/${version}/`, "Read online");
+  // Both tables have the same columns; a pre-release has no DOI.
+  const COLUMNS = ["Version", "Date", "Web", "DOI", "PDF", "Details"];
 
   // Fill box with a table built from fetch(url) → rows; on failure show fallback(message).
   const fill = async (box, url, toRows, header, fallback) => {
@@ -201,11 +210,11 @@ Loading pre-releases from GitHub…
     `https://zenodo.org/api/records?q=conceptrecid:${conceptDoi.match(/(\d+)$/)[1]}&all_versions=true&sort=mostrecent&size=25`,
     (json) => json.hits.hits.map((r) => {
       const pdf = (r.files || []).find((f) => /\.pdf$/i.test(f.key));
-      return [r.metadata.version || "-", r.metadata.publication_date, link(`https://doi.org/${r.doi}`, r.doi),
-              r.metadata.version ? web(r.metadata.version) : "-", pdf ? link(pdf.links.self, "PDF") : "-",
-              link(r.links.self_html, "Record")];
+      return [r.metadata.version || "-", r.metadata.publication_date, r.metadata.version ? web(r.metadata.version) : "-",
+              link(`https://doi.org/${r.doi}`, r.doi), pdf ? link(pdf.links.self, "Download") : "on Zenodo",
+              link(r.links.self_html, "Zenodo record")];
     }),
-    ["Version", "Release date", "DOI", "Web", "Download", "Zenodo"],
+    COLUMNS,
     (msg) => `<p>Could not load releases (${msg}). See all versions on Zenodo: ` +
       `${link(`https://doi.org/${conceptDoi}`, conceptDoi)}</p>`);
 
@@ -216,9 +225,9 @@ Loading pre-releases from GitHub…
     (list) => list.filter((r) => r.prerelease && !r.draft && !/-test\./.test(r.tag_name)).map((r) => {
       const pdf = r.assets.find((a) => /\.pdf$/i.test(a.name));
       return [r.tag_name.replace(/^v/, ""), (r.published_at || "").slice(0, 10), web(r.tag_name.replace(/^v/, "")),
-              pdf ? link(pdf.browser_download_url, "PDF") : "-", link(r.html_url, "GitHub")];
+              "", pdf ? link(pdf.browser_download_url, "Download") : "-", link(r.html_url, "Release notes")];
     }),
-    ["Version", "Date", "Web", "Download", "Release notes"],
+    COLUMNS,
     (msg) => `<p>No pre-releases listed (${msg}). See ${link(`https://github.com/${repo}/releases`, "GitHub releases")}.</p>`);
 })();
 </script>
