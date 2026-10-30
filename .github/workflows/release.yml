@@ -76,6 +76,7 @@ jobs:
           gh release create "$tag" build/*.pdf build/site.tar.gz build/release.json \
             --target "$GITHUB_SHA" --title "$title" --notes-file build/notes.md $flag
           echo "TAG=$tag" >> "$GITHUB_ENV"
+          echo "WEB_VERSION=${tag#v}" >> "$GITHUB_ENV"
 
       - name: Deploy pre-release to /preview/
         if: env.PRERELEASE == 'true'
@@ -84,6 +85,15 @@ jobs:
           github_token: ${{ github.token }}
           publish_dir: _site
           destination_dir: preview
+
+      # Every pre-release also keeps a permanent web version (linked from All versions and the PDF).
+      - name: Keep the web version at /versions/<version>/
+        if: env.PRERELEASE == 'true'
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ github.token }}
+          publish_dir: _site
+          destination_dir: versions/${{ env.WEB_VERSION }}
 
       - name: Say what happens next
         run: |

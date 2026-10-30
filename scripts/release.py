@@ -35,6 +35,8 @@ PDF_PREFIX = "IPBES-Data-Management-Vision"
 SITE = Path("_site")
 BUILD = Path("build")
 GENERATED = Path("_generated")
+PUBLIC_SITE = "https://ipbes-data.github.io/IPBES_Data_Vision/"
+REPOSITORY = "https://github.com/IPBES-Data/IPBES_Data_Vision"
 NOTES_HEADING = "<h3>Release notes</h3>"
 ZENODO = {
     "sandbox": ("https://sandbox.zenodo.org", "ZENODO_SANDBOX_TOKEN", "sandbox_concept_doi"),
@@ -80,6 +82,8 @@ def write_includes(meta: dict, fm: dict) -> None:
     citation_html = (f"IPBES ({year}): <i>{e(fm['title'])}</i>, version {e(version)}, {e(editors)} (eds.). "
                      f"{e(fm['publisher'])}. DOI: {doi_html}")
 
+    web_line = ("" if version == "draft" else
+                f'<p class="permalink">Permanent web version: <a href="{meta["web_url"]}">{meta["web_url"]}</a></p>')
     GENERATED.mkdir(exist_ok=True)
     (GENERATED / "front.md").write_text(f"""::: {{.content-visible when-format="html"}}
 ```{{=html}}
@@ -87,7 +91,7 @@ def write_includes(meta: dict, fm: dict) -> None:
 <div class="version-card"><div class="facts">
 <div><div class="label">Version</div>{e(version)}</div><div><div class="label">Date</div>{e(date)}</div>
 <div><div class="label">DOI</div>{doi_html}</div><div><div class="label">Editors</div>{e(editors)}</div></div>
-<details><summary>Release notes</summary>{notes_html}</details>
+{web_line}<details><summary>Release notes</summary>{notes_html}</details>
 <details><summary>How to cite</summary><p>{citation_html}</p></details></div>
 <div class="vision-start"></div>
 ```
@@ -128,8 +132,16 @@ def render(meta: dict) -> Path:
     """Render the website and the PDF; meta goes to the templates (-M) and into _generated/ (write_includes)."""
     meta = {key: meta.get(key, "") for key in
             ("version", "release_date", "release_year", "doi", "prerelease", "release_notes",
-             "current_release")}
+             "current_release", "web_url", "watermark")}
     meta["current_release"] = meta["current_release"] or versions.fmt(versions.latest_release(versions.tags()))
+    # Every page of the PDF says where it comes from: the permanent web version of this version
+    # (pre-releases and releases are kept at versions/<version>/), or the repository for drafts.
+    if meta["version"] in ("", "draft"):
+        meta["web_url"] = REPOSITORY
+        meta["watermark"] = f"Unpublished working draft after {versions.based_on(versions.tags())} · generated from"
+    else:
+        meta["web_url"] = f"{PUBLIC_SITE}versions/{meta['version']}/"
+        meta["watermark"] = f"Version {meta['version']} · generated from"
     write_includes(meta, frontmatter())
     flags = [arg for key, value in meta.items() if value and key != "release_notes" for arg in ("-M", f"{key}={value}")]
     pdf = BUILD / f"{PDF_PREFIX}-{'draft' if meta['version'] == 'draft' else 'v' + meta['version']}.pdf"
