@@ -51,13 +51,15 @@ jobs:
           gh release edit "$TAG" --notes-file build/notes.md
 
       # The preview is dropped: its release candidate has just become this release.
-      - name: Unpack site, keeping the admin panel
+      - name: Unpack site, keeping the admin panel and the web versions
         run: |
           mkdir _site && tar -xzf build/site.tar.gz -C _site
           git fetch -q --depth=1 origin gh-pages
-          for dir in admin; do
+          for dir in admin versions; do
             git archive FETCH_HEAD "$dir" 2>/dev/null | tar -x -C _site || echo "No /$dir/ on the site yet"
           done
+          # The release's own permanent web version (linked from All versions and the PDF).
+          v="${TAG#v}"; mkdir -p "_site/versions/$v" && tar -xzf build/site.tar.gz -C "_site/versions/$v"
 
       # Sandbox DOIs are test records, so only production releases replace the official site.
       - name: Deploy site
